@@ -1,10 +1,22 @@
 import { ShipMethodDto } from './ShipMethodDto';
 import { PurchaseOrderDetailDto, CreatePurchaseOrderDetailDto, UpdatePurchaseOrderDetailDto } from './PurchaseOrderDetailDto';
 
+export interface EmployeeDto {
+  businessEntityId: number;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+}
+
+interface VendorDto {
+  businessEntityId: number;
+  name: string;
+  accountNumber: string;
+}
+
 export interface PurchaseOrderDto {
   purchaseOrderId: number;
   status: number;
-  employeeId: number;
   vendorId: number;
   orderDate: Date;
   shipDate: Date | null;
@@ -14,6 +26,8 @@ export interface PurchaseOrderDto {
   totalDue: number;
   shipMethod?: ShipMethodDto;
   purchaseOrderDetails?: PurchaseOrderDetailDto[];
+  employee?: EmployeeDto;
+  vendor?: VendorDto;
 }
 
 export interface CreatePurchaseOrderDto {

@@ -55,7 +55,7 @@ export class PurchaseOrderService {
 
     const purchaseOrderDetails = dto.purchaseOrderDetails?.map(detail =>
       PurchaseOrderDetail.create({
-        purchaseOrderDetailId: 0, // Will be set by database
+        purchaseOrderDetailId: 0,
         purchaseOrderId: id,
         ...detail,
         modifiedDate: new Date()
@@ -63,43 +63,35 @@ export class PurchaseOrderService {
     );
 
     const updatedPurchaseOrder = PurchaseOrder.create({
-      purchaseOrderId: existingPurchaseOrder.purchaseOrderId,
+      purchaseOrderId: id,
       status: dto.status ?? existingPurchaseOrder.status,
-      employeeId: dto.employeeId ?? existingPurchaseOrder.employeeId,
       vendorId: dto.vendorId ?? existingPurchaseOrder.vendorId,
       orderDate: dto.orderDate ?? existingPurchaseOrder.orderDate,
       shipDate: dto.shipDate ?? existingPurchaseOrder.shipDate,
       subTotal: dto.subTotal ?? existingPurchaseOrder.subTotal,
       taxAmt: dto.taxAmt ?? existingPurchaseOrder.taxAmt,
       freight: dto.freight ?? existingPurchaseOrder.freight,
-      modifiedDate: new Date(),
       totalDue: this.calculateTotalDue(
         dto.subTotal ?? existingPurchaseOrder.subTotal,
         dto.taxAmt ?? existingPurchaseOrder.taxAmt,
         dto.freight ?? existingPurchaseOrder.freight
       ),
-      purchaseOrderDetails: purchaseOrderDetails ?? existingPurchaseOrder.purchaseOrderDetails
+      modifiedDate: new Date(),
+      purchaseOrderDetails: purchaseOrderDetails || existingPurchaseOrder.purchaseOrderDetails
     });
 
     await this.purchaseOrderRepository.update(updatedPurchaseOrder);
     return this.toDto(updatedPurchaseOrder);
   }
 
-  async delete(id: number): Promise<boolean> {
-    const purchaseOrder = await this.purchaseOrderRepository.findById(id);
-    if (!purchaseOrder) {
-      return false;
-    }
-
+  async delete(id: number): Promise<void> {
     await this.purchaseOrderRepository.delete(id);
-    return true;
   }
 
   private toDto(purchaseOrder: PurchaseOrder): PurchaseOrderDto {
     const dto: PurchaseOrderDto = {
       purchaseOrderId: purchaseOrder.purchaseOrderId,
       status: purchaseOrder.status,
-      employeeId: purchaseOrder.employeeId,
       vendorId: purchaseOrder.vendorId,
       orderDate: purchaseOrder.orderDate,
       shipDate: purchaseOrder.shipDate,
@@ -131,6 +123,23 @@ export class PurchaseOrderService {
         rejectedQty: detail.rejectedQty,
         stockedQty: detail.stockedQty
       }));
+    }
+
+    if (purchaseOrder.employee) {
+      dto.employee = {
+        businessEntityId: purchaseOrder.employee.businessEntityId,
+        firstName: purchaseOrder.employee.firstName,
+        middleName: purchaseOrder.employee.middleName,
+        lastName: purchaseOrder.employee.lastName
+      };
+    }
+
+    if (purchaseOrder.vendor) {
+      dto.vendor = {
+        businessEntityId: purchaseOrder.vendor.businessEntityId,
+        name: purchaseOrder.vendor.name,
+        accountNumber: purchaseOrder.vendor.accountNumber
+      };
     }
 
     return dto;

@@ -12,14 +12,14 @@ import sequelize from '../database/config';
 export class PurchaseOrderRepository implements IPurchaseOrderRepository {
   async findAll(): Promise<DomainPurchaseOrder[]> {
     const purchaseOrders = await PurchaseOrder.findAll({
-      include: ['shipMethod', 'purchaseOrderDetails']
+      include: ['shipMethod', 'purchaseOrderDetails', 'employee', 'vendor']
     });
     return purchaseOrders.map((po: PurchaseOrderInstance) => this.toDomain(po));
   }
 
   async findById(id: number): Promise<DomainPurchaseOrder | null> {
     const purchaseOrder = await PurchaseOrder.findByPk(id, {
-      include: ['shipMethod', 'purchaseOrderDetails']
+      include: ['shipMethod', 'purchaseOrderDetails', 'employee', 'vendor']
     });
     return purchaseOrder ? this.toDomain(purchaseOrder) : null;
   }
@@ -102,7 +102,6 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
     const props: PurchaseOrderProps = {
       purchaseOrderId: model.purchaseOrderId,
       status: model.status,
-      employeeId: model.employeeId,
       vendorId: model.vendorId,
       orderDate: model.orderDate,
       shipDate: model.shipDate,
@@ -139,6 +138,23 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
           modifiedDate: detail.modifiedDate
         })
       );
+    }
+
+    if (model.employee) {
+      props.employee = {
+        businessEntityId: model.employee.businessEntityId,
+        firstName: model.employee.firstName,
+        middleName: model.employee.middleName,
+        lastName: model.employee.lastName
+      };
+    }
+
+    if (model.vendor) {
+      props.vendor = {
+        businessEntityId: model.vendor.businessEntityId,
+        name: model.vendor.name,
+        accountNumber: model.vendor.accountNumber
+      };
     }
 
     return DomainPurchaseOrder.create(props);

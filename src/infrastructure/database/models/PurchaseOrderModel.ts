@@ -2,6 +2,8 @@ import { Model, DataTypes, InferAttributes, InferCreationAttributes, CreationOpt
 import sequelize from '../config';
 import { ShipMethod, ShipMethodInstance } from './ShipMethodModel';
 import { PurchaseOrderDetail, PurchaseOrderDetailInstance } from './PurchaseOrderDetailModel';
+import { Person, PersonInstance } from './PersonModel';
+import { Vendor, VendorInstance } from './VendorModel';
 
 export interface PurchaseOrderInstance extends Model<
   InferAttributes<PurchaseOrderInstance>,
@@ -21,6 +23,8 @@ export interface PurchaseOrderInstance extends Model<
   modifiedDate: Date;
   shipMethod?: ShipMethodInstance;
   purchaseOrderDetails?: PurchaseOrderDetailInstance[];
+  employee?: PersonInstance;
+  vendor?: VendorInstance;
 }
 
 export const PurchaseOrder = sequelize.define<PurchaseOrderInstance>(
@@ -38,7 +42,11 @@ export const PurchaseOrder = sequelize.define<PurchaseOrderInstance>(
     },
     employeeId: {
       type: DataTypes.INTEGER,
-      field: 'EmployeeID'
+      field: 'EmployeeID',
+      references: {
+        model: 'Person',
+        key: 'BusinessEntityID'
+      }
     },
     vendorId: {
       type: DataTypes.INTEGER,

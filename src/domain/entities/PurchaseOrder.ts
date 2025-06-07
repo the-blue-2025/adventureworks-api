@@ -3,10 +3,22 @@ import { AggregateRoot } from '../common/AggregateRoot';
 import { ShipMethod } from './ShipMethod';
 import { PurchaseOrderDetail } from './PurchaseOrderDetail';
 
+interface Employee {
+  businessEntityId: number;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+}
+
+interface Vendor {
+  businessEntityId: number;
+  name: string;
+  accountNumber: string;
+}
+
 export interface PurchaseOrderProps {
   purchaseOrderId: number;
   status: number;
-  employeeId: number;
   vendorId: number;
   orderDate: Date;
   shipDate: Date | null;
@@ -17,6 +29,8 @@ export interface PurchaseOrderProps {
   modifiedDate: Date;
   shipMethod?: ShipMethod;
   purchaseOrderDetails?: PurchaseOrderDetail[];
+  employee?: Employee;
+  vendor?: Vendor;
 }
 
 export class PurchaseOrder extends Entity<PurchaseOrderProps> implements AggregateRoot<PurchaseOrderProps> {
@@ -28,8 +42,8 @@ export class PurchaseOrder extends Entity<PurchaseOrderProps> implements Aggrega
     return this.props.status;
   }
 
-  get employeeId(): number {
-    return this.props.employeeId;
+  get employeeId(): number | undefined {
+    return this.props.employee?.businessEntityId;
   }
 
   get vendorId(): number {
@@ -70,6 +84,14 @@ export class PurchaseOrder extends Entity<PurchaseOrderProps> implements Aggrega
 
   get purchaseOrderDetails(): PurchaseOrderDetail[] | undefined {
     return this.props.purchaseOrderDetails;
+  }
+
+  get employee(): Employee | undefined {
+    return this.props.employee;
+  }
+
+  get vendor(): Vendor | undefined {
+    return this.props.vendor;
   }
 
   private constructor(props: PurchaseOrderProps) {

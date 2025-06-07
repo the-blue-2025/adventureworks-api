@@ -20,3 +20,10 @@ GET /api/v1/persons/:id
 POST /api/v1/persons
 PUT /api/v1/persons/:id
 DELETE /api/v1/persons/:id
+
+Vendors:
+GET /api/v1/vendors
+GET /api/v1/vendors/:id
+POST /api/v1/vendors
+PUT /api/v1/vendors/:id
+DELETE /api/v1/vendors/:id
