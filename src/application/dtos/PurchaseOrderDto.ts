@@ -1,4 +1,5 @@
 import { ShipMethodDto } from './ShipMethodDto';
+import { PurchaseOrderDetailDto, CreatePurchaseOrderDetailDto, UpdatePurchaseOrderDetailDto } from './PurchaseOrderDetailDto';
 
 export interface PurchaseOrderDto {
   purchaseOrderId: number;
@@ -12,6 +13,7 @@ export interface PurchaseOrderDto {
   freight: number;
   totalDue: number;
   shipMethod?: ShipMethodDto;
+  purchaseOrderDetails?: PurchaseOrderDetailDto[];
 }
 
 export interface CreatePurchaseOrderDto {
@@ -24,6 +26,7 @@ export interface CreatePurchaseOrderDto {
   subTotal: number;
   taxAmt: number;
   freight: number;
+  purchaseOrderDetails?: CreatePurchaseOrderDetailDto[];
 }
 
 export interface UpdatePurchaseOrderDto {
@@ -36,4 +39,5 @@ export interface UpdatePurchaseOrderDto {
   subTotal?: number;
   taxAmt?: number;
   freight?: number;
+  purchaseOrderDetails?: CreatePurchaseOrderDetailDto[];
 } 

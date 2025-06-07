@@ -1,5 +1,7 @@
 import { Entity } from '../common/Entity';
+import { AggregateRoot } from '../common/AggregateRoot';
 import { ShipMethod } from './ShipMethod';
+import { PurchaseOrderDetail } from './PurchaseOrderDetail';
 
 export interface PurchaseOrderProps {
   purchaseOrderId: number;
@@ -14,9 +16,10 @@ export interface PurchaseOrderProps {
   totalDue: number;
   modifiedDate: Date;
   shipMethod?: ShipMethod;
+  purchaseOrderDetails?: PurchaseOrderDetail[];
 }
 
-export class PurchaseOrder extends Entity<PurchaseOrderProps> {
+export class PurchaseOrder extends Entity<PurchaseOrderProps> implements AggregateRoot<PurchaseOrderProps> {
   get purchaseOrderId(): number {
     return this.props.purchaseOrderId;
   }
@@ -63,6 +66,10 @@ export class PurchaseOrder extends Entity<PurchaseOrderProps> {
 
   get shipMethod(): ShipMethod | undefined {
     return this.props.shipMethod;
+  }
+
+  get purchaseOrderDetails(): PurchaseOrderDetail[] | undefined {
+    return this.props.purchaseOrderDetails;
   }
 
   private constructor(props: PurchaseOrderProps) {

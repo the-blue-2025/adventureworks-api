@@ -2,8 +2,10 @@ import { injectable, inject } from 'inversify';
 import { TYPES } from '../../infrastructure/ioc/types';
 import { IPurchaseOrderRepository } from '../../domain/repositories/IPurchaseOrderRepository';
 import { PurchaseOrder } from '../../domain/entities/PurchaseOrder';
+import { PurchaseOrderDetail } from '../../domain/entities/PurchaseOrderDetail';
 import { CreatePurchaseOrderDto, PurchaseOrderDto, UpdatePurchaseOrderDto } from '../dtos/PurchaseOrderDto';
 import { ShipMethodDto } from '../dtos/ShipMethodDto';
+import { PurchaseOrderDetailDto } from '../dtos/PurchaseOrderDetailDto';
 
 @injectable()
 export class PurchaseOrderService {
@@ -23,12 +25,22 @@ export class PurchaseOrderService {
   }
 
   async create(dto: CreatePurchaseOrderDto): Promise<PurchaseOrderDto> {
+    const purchaseOrderDetails = dto.purchaseOrderDetails?.map(detail =>
+      PurchaseOrderDetail.create({
+        purchaseOrderDetailId: 0, // Will be set by database
+        purchaseOrderId: 0, // Will be set after PurchaseOrder creation
+        ...detail,
+        modifiedDate: new Date()
+      })
+    );
+
     const purchaseOrder = PurchaseOrder.create({
       ...dto,
       purchaseOrderId: 0, // Will be set by database
       totalDue: this.calculateTotalDue(dto.subTotal, dto.taxAmt, dto.freight),
       modifiedDate: new Date(),
-      shipDate: dto.shipDate || null
+      shipDate: dto.shipDate || null,
+      purchaseOrderDetails
     });
 
     await this.purchaseOrderRepository.create(purchaseOrder);
@@ -40,6 +52,15 @@ export class PurchaseOrderService {
     if (!existingPurchaseOrder) {
       return null;
     }
+
+    const purchaseOrderDetails = dto.purchaseOrderDetails?.map(detail =>
+      PurchaseOrderDetail.create({
+        purchaseOrderDetailId: 0, // Will be set by database
+        purchaseOrderId: id,
+        ...detail,
+        modifiedDate: new Date()
+      })
+    );
 
     const updatedPurchaseOrder = PurchaseOrder.create({
       purchaseOrderId: existingPurchaseOrder.purchaseOrderId,
@@ -56,7 +77,8 @@ export class PurchaseOrderService {
         dto.subTotal ?? existingPurchaseOrder.subTotal,
         dto.taxAmt ?? existingPurchaseOrder.taxAmt,
         dto.freight ?? existingPurchaseOrder.freight
-      )
+      ),
+      purchaseOrderDetails: purchaseOrderDetails ?? existingPurchaseOrder.purchaseOrderDetails
     });
 
     await this.purchaseOrderRepository.update(updatedPurchaseOrder);
@@ -94,6 +116,21 @@ export class PurchaseOrderService {
         shipBase: purchaseOrder.shipMethod.shipBase,
         shipRate: purchaseOrder.shipMethod.shipRate
       };
+    }
+
+    if (purchaseOrder.purchaseOrderDetails) {
+      dto.purchaseOrderDetails = purchaseOrder.purchaseOrderDetails.map(detail => ({
+        purchaseOrderDetailId: detail.purchaseOrderDetailId,
+        purchaseOrderId: detail.purchaseOrderId,
+        dueDate: detail.dueDate,
+        orderQty: detail.orderQty,
+        productId: detail.productId,
+        unitPrice: detail.unitPrice,
+        lineTotal: detail.lineTotal,
+        receivedQty: detail.receivedQty,
+        rejectedQty: detail.rejectedQty,
+        stockedQty: detail.stockedQty
+      }));
     }
 
     return dto;
