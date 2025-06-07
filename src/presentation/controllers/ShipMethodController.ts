@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { Request, Response } from 'express';
-import { TYPES } from '../../infrastructure/ioc/types';
+import { TYPES } from '../../ioc/types';
 import { ShipMethodService } from '../../application/services/ShipMethodService';
 import { CreateShipMethodDto, UpdateShipMethodDto } from '../../application/dtos/ShipMethodDto';
 

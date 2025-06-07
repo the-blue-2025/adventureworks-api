@@ -3,7 +3,7 @@ import { IPurchaseOrderRepository } from '../../domain/repositories/IPurchaseOrd
 import { PurchaseOrder as DomainPurchaseOrder, PurchaseOrderProps } from '../../domain/entities/PurchaseOrder';
 import { PurchaseOrderDetail as DomainPurchaseOrderDetail } from '../../domain/entities/PurchaseOrderDetail';
 import { PurchaseOrder, PurchaseOrderInstance } from '../database/models/PurchaseOrderModel';
-import { PurchaseOrderDetail } from '../database/models/PurchaseOrderDetailModel';
+import { PurchaseOrderDetail, PurchaseOrderDetailInstance } from '../database/models/PurchaseOrderDetailModel';
 import { ShipMethod as DomainShipMethod } from '../../domain/entities/ShipMethod';
 import { Transaction } from 'sequelize';
 import sequelize from '../database/config';
@@ -24,6 +24,21 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
     return purchaseOrder ? this.toDomain(purchaseOrder) : null;
   }
 
+  async findDetailById(id: number): Promise<DomainPurchaseOrderDetail | null> {
+    const detail = await PurchaseOrderDetail.findByPk(id, {
+      include: ['purchaseOrder']
+    });
+    return detail ? this.toDetailDomain(detail) : null;
+  }
+
+  async findDetailsByPurchaseOrderId(purchaseOrderId: number): Promise<DomainPurchaseOrderDetail[]> {
+    const details = await PurchaseOrderDetail.findAll({
+      where: { purchaseOrderId },
+      include: ['purchaseOrder']
+    });
+    return details.map(detail => this.toDetailDomain(detail));
+  }
+
   async create(purchaseOrder: DomainPurchaseOrder): Promise<void> {
     const t = await sequelize.transaction();
     try {
@@ -31,7 +46,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
       
       if (purchaseOrder.purchaseOrderDetails) {
         const details = purchaseOrder.purchaseOrderDetails.map(detail => ({
-          ...this.toPersistenceDetail(detail),
+          ...this.toDetailPersistence(detail),
           purchaseOrderId: createdPO.purchaseOrderId
         }));
         await PurchaseOrderDetail.bulkCreate(details, { transaction: t });
@@ -64,7 +79,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
 
         // Create new details
         const details = purchaseOrder.purchaseOrderDetails.map(detail => ({
-          ...this.toPersistenceDetail(detail),
+          ...this.toDetailPersistence(detail),
           purchaseOrderId: purchaseOrder.purchaseOrderId
         }));
         await PurchaseOrderDetail.bulkCreate(details, { transaction: t });
@@ -75,6 +90,15 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
       await t.rollback();
       throw error;
     }
+  }
+
+  async updateDetail(purchaseOrderDetail: DomainPurchaseOrderDetail): Promise<void> {
+    await PurchaseOrderDetail.update(
+      this.toDetailPersistence(purchaseOrderDetail),
+      {
+        where: { purchaseOrderDetailId: purchaseOrderDetail.purchaseOrderDetailId }
+      }
+    );
   }
 
   async delete(id: number): Promise<void> {
@@ -96,6 +120,12 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
       await t.rollback();
       throw error;
     }
+  }
+
+  async deleteDetail(id: number): Promise<void> {
+    await PurchaseOrderDetail.destroy({
+      where: { purchaseOrderDetailId: id }
+    });
   }
 
   private toDomain(model: PurchaseOrderInstance): DomainPurchaseOrder {
@@ -160,6 +190,22 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
     return DomainPurchaseOrder.create(props);
   }
 
+  private toDetailDomain(model: PurchaseOrderDetailInstance): DomainPurchaseOrderDetail {
+    return DomainPurchaseOrderDetail.create({
+      purchaseOrderDetailId: model.purchaseOrderDetailId,
+      purchaseOrderId: model.purchaseOrderId,
+      dueDate: model.dueDate,
+      orderQty: model.orderQty,
+      productId: model.productId,
+      unitPrice: model.unitPrice,
+      lineTotal: model.lineTotal,
+      receivedQty: model.receivedQty,
+      rejectedQty: model.rejectedQty,
+      stockedQty: model.stockedQty,
+      modifiedDate: model.modifiedDate
+    });
+  }
+
   private toPersistence(domain: DomainPurchaseOrder): any {
     return {
       purchaseOrderId: domain.purchaseOrderId,
@@ -177,9 +223,10 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
     };
   }
 
-  private toPersistenceDetail(domain: DomainPurchaseOrderDetail): any {
+  private toDetailPersistence(domain: DomainPurchaseOrderDetail): any {
     return {
       purchaseOrderDetailId: domain.purchaseOrderDetailId,
+      purchaseOrderId: domain.purchaseOrderId,
       dueDate: domain.dueDate,
       orderQty: domain.orderQty,
       productId: domain.productId,

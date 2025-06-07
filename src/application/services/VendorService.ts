@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { TYPES } from '../../infrastructure/ioc/types';
+import { TYPES } from '../../ioc/types';
 import { IVendorRepository } from '../../domain/repositories/IVendorRepository';
 import { Vendor } from '../../domain/entities/Vendor';
 import { VendorDto, CreateVendorDto, UpdateVendorDto } from '../dtos/VendorDto';

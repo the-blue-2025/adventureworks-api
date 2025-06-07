@@ -31,6 +31,6 @@ Vendors:
 Purchase Order Details:
 - GET    /api/v1/purchase-order-details
 - GET    /api/v1/purchase-order-details/:id
-- POST   /api/v1/purchase-order-details
+- GET    /api/v1/purchase-order-details/purchase-order/:purchaseOrderId
 - PUT    /api/v1/purchase-order-details/:id
 - DELETE /api/v1/purchase-order-details/:id

@@ -1,90 +1,77 @@
 import { injectable, inject } from 'inversify';
-import { TYPES } from '../../infrastructure/ioc/types';
-import { IPurchaseOrderDetailRepository } from '../../domain/repositories/IPurchaseOrderDetailRepository';
+import { TYPES } from '../../ioc/types';
+import { IPurchaseOrderRepository } from '../../domain/repositories/IPurchaseOrderRepository';
 import { PurchaseOrderDetail } from '../../domain/entities/PurchaseOrderDetail';
-import { 
-  PurchaseOrderDetailDto, 
-  CreatePurchaseOrderDetailDto, 
-  UpdatePurchaseOrderDetailDto 
-} from '../dtos/PurchaseOrderDetailDto';
+import { PurchaseOrderDetailDto, UpdatePurchaseOrderDetailDto } from '../dtos/PurchaseOrderDetailDto';
 
 @injectable()
 export class PurchaseOrderDetailService {
   constructor(
-    @inject(TYPES.IPurchaseOrderDetailRepository)
-    private purchaseOrderDetailRepository: IPurchaseOrderDetailRepository
+    @inject(TYPES.IPurchaseOrderRepository)
+    private purchaseOrderRepository: IPurchaseOrderRepository
   ) {}
 
   async findAll(): Promise<PurchaseOrderDetailDto[]> {
-    const purchaseOrderDetails = await this.purchaseOrderDetailRepository.findAll();
-    return purchaseOrderDetails.map(pod => this.toDto(pod));
+    const purchaseOrder = await this.purchaseOrderRepository.findAll();
+    const details: PurchaseOrderDetail[] = [];
+    purchaseOrder.forEach(po => {
+      if (po.purchaseOrderDetails) {
+        details.push(...po.purchaseOrderDetails);
+      }
+    });
+    return details.map(detail => this.toDto(detail));
   }
 
   async findById(id: number): Promise<PurchaseOrderDetailDto | null> {
-    const purchaseOrderDetail = await this.purchaseOrderDetailRepository.findById(id);
-    return purchaseOrderDetail ? this.toDto(purchaseOrderDetail) : null;
+    const detail = await this.purchaseOrderRepository.findDetailById(id);
+    return detail ? this.toDto(detail) : null;
   }
 
-  async create(dto: CreatePurchaseOrderDetailDto): Promise<PurchaseOrderDetailDto> {
-    const purchaseOrderDetail = PurchaseOrderDetail.createNew({
-      purchaseOrderId: dto.purchaseOrderId,
-      dueDate: dto.dueDate,
-      orderQty: dto.orderQty,
-      productId: dto.productId,
-      unitPrice: dto.unitPrice,
-      receivedQty: dto.receivedQty || 0,
-      rejectedQty: dto.rejectedQty || 0,
-      stockedQty: dto.stockedQty || 0,
-      modifiedDate: new Date()
-    });
-
-    const created = await this.purchaseOrderDetailRepository.create(purchaseOrderDetail);
-    return this.toDto(created);
+  async findByPurchaseOrderId(purchaseOrderId: number): Promise<PurchaseOrderDetailDto[]> {
+    const details = await this.purchaseOrderRepository.findDetailsByPurchaseOrderId(purchaseOrderId);
+    return details.map(detail => this.toDto(detail));
   }
 
   async update(id: number, dto: UpdatePurchaseOrderDetailDto): Promise<PurchaseOrderDetailDto | null> {
-    const existingPurchaseOrderDetail = await this.purchaseOrderDetailRepository.findById(id);
-    if (!existingPurchaseOrderDetail) {
+    const existingDetail = await this.purchaseOrderRepository.findDetailById(id);
+    if (!existingDetail) {
       return null;
     }
 
-    const orderQty = dto.orderQty ?? existingPurchaseOrderDetail.orderQty;
-    const unitPrice = dto.unitPrice ?? existingPurchaseOrderDetail.unitPrice;
-
-    const updatedPurchaseOrderDetail = PurchaseOrderDetail.create({
+    const updatedDetail = PurchaseOrderDetail.create({
       purchaseOrderDetailId: id,
-      purchaseOrderId: existingPurchaseOrderDetail.purchaseOrderId,
-      dueDate: dto.dueDate ?? existingPurchaseOrderDetail.dueDate,
-      orderQty: orderQty,
-      productId: dto.productId ?? existingPurchaseOrderDetail.productId,
-      unitPrice: unitPrice,
-      lineTotal: orderQty * unitPrice,
-      receivedQty: dto.receivedQty ?? existingPurchaseOrderDetail.receivedQty,
-      rejectedQty: dto.rejectedQty ?? existingPurchaseOrderDetail.rejectedQty,
-      stockedQty: dto.stockedQty ?? existingPurchaseOrderDetail.stockedQty,
+      purchaseOrderId: existingDetail.purchaseOrderId,
+      dueDate: dto.dueDate ?? existingDetail.dueDate,
+      orderQty: dto.orderQty ?? existingDetail.orderQty,
+      productId: dto.productId ?? existingDetail.productId,
+      unitPrice: dto.unitPrice ?? existingDetail.unitPrice,
+      lineTotal: (dto.orderQty ?? existingDetail.orderQty) * (dto.unitPrice ?? existingDetail.unitPrice),
+      receivedQty: dto.receivedQty ?? existingDetail.receivedQty,
+      rejectedQty: dto.rejectedQty ?? existingDetail.rejectedQty,
+      stockedQty: dto.stockedQty ?? existingDetail.stockedQty,
       modifiedDate: new Date()
     });
 
-    await this.purchaseOrderDetailRepository.update(updatedPurchaseOrderDetail);
-    return this.toDto(updatedPurchaseOrderDetail);
+    await this.purchaseOrderRepository.updateDetail(updatedDetail);
+    return this.toDto(updatedDetail);
   }
 
   async delete(id: number): Promise<void> {
-    await this.purchaseOrderDetailRepository.delete(id);
+    await this.purchaseOrderRepository.deleteDetail(id);
   }
 
-  private toDto(purchaseOrderDetail: PurchaseOrderDetail): PurchaseOrderDetailDto {
+  private toDto(detail: PurchaseOrderDetail): PurchaseOrderDetailDto {
     return {
-      purchaseOrderDetailId: purchaseOrderDetail.purchaseOrderDetailId,
-      purchaseOrderId: purchaseOrderDetail.purchaseOrderId,
-      dueDate: purchaseOrderDetail.dueDate,
-      orderQty: purchaseOrderDetail.orderQty,
-      productId: purchaseOrderDetail.productId,
-      unitPrice: purchaseOrderDetail.unitPrice,
-      lineTotal: purchaseOrderDetail.lineTotal,
-      receivedQty: purchaseOrderDetail.receivedQty,
-      rejectedQty: purchaseOrderDetail.rejectedQty,
-      stockedQty: purchaseOrderDetail.stockedQty
+      purchaseOrderDetailId: detail.purchaseOrderDetailId,
+      purchaseOrderId: detail.purchaseOrderId,
+      dueDate: detail.dueDate,
+      orderQty: detail.orderQty,
+      productId: detail.productId,
+      unitPrice: detail.unitPrice,
+      lineTotal: detail.lineTotal,
+      receivedQty: detail.receivedQty,
+      rejectedQty: detail.rejectedQty,
+      stockedQty: detail.stockedQty
     };
   }
 } 

@@ -27,7 +27,7 @@ export interface PurchaseOrderInstance extends Model<
   vendor?: VendorInstance;
 }
 
-export const PurchaseOrder = sequelize.define<PurchaseOrderInstance>(
+const PurchaseOrder = sequelize.define<PurchaseOrderInstance>(
   'PurchaseOrder',
   {
     purchaseOrderId: {
@@ -50,7 +50,11 @@ export const PurchaseOrder = sequelize.define<PurchaseOrderInstance>(
     },
     vendorId: {
       type: DataTypes.INTEGER,
-      field: 'VendorID'
+      field: 'VendorID',
+      references: {
+        model: 'Vendor',
+        key: 'BusinessEntityID'
+      }
     },
     shipMethodId: {
       type: DataTypes.INTEGER,
@@ -99,10 +103,35 @@ export const PurchaseOrder = sequelize.define<PurchaseOrderInstance>(
 // Define relationships
 PurchaseOrder.hasMany(PurchaseOrderDetail, {
   foreignKey: 'purchaseOrderId',
-  as: 'purchaseOrderDetails'
+  as: 'purchaseOrderDetails',
+  sourceKey: 'purchaseOrderId'
 });
 
 PurchaseOrderDetail.belongsTo(PurchaseOrder, {
   foreignKey: 'purchaseOrderId',
-  as: 'purchaseOrder'
-}); 
+  as: 'purchaseOrder',
+  targetKey: 'purchaseOrderId'
+});
+
+// Define relationship with ShipMethod
+PurchaseOrder.belongsTo(ShipMethod, {
+  foreignKey: 'shipMethodId',
+  as: 'shipMethod',
+  targetKey: 'shipMethodId'
+});
+
+// Define relationship with Person (Employee)
+PurchaseOrder.belongsTo(Person, {
+  foreignKey: 'employeeId',
+  as: 'employee',
+  targetKey: 'businessEntityId'
+});
+
+// Define relationship with Vendor
+PurchaseOrder.belongsTo(Vendor, {
+  foreignKey: 'vendorId',
+  as: 'vendor',
+  targetKey: 'businessEntityId'
+});
+
+export { PurchaseOrder }; 

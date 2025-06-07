@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import express from 'express';
-import { configureContainer } from './infrastructure/ioc/inversify.config';
-import { initializeAssociations } from './infrastructure/database/associations';
+import { configureContainer } from './ioc/inversify.config';
 import sequelize from './infrastructure/database/config';
 
 // Routes
@@ -18,10 +17,6 @@ async function bootstrap() {
     // Database connection
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
-
-    // Initialize database associations
-    initializeAssociations();
-    console.log('Database associations have been initialized successfully.');
 
     // IoC container setup
     const container = configureContainer();

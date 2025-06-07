@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { TYPES } from '../../infrastructure/ioc/types';
+import { TYPES } from '../../ioc/types';
 import { IShipMethodRepository } from '../../domain/repositories/IShipMethodRepository';
 import { ShipMethod } from '../../domain/entities/ShipMethod';
 import { CreateShipMethodDto, ShipMethodDto, UpdateShipMethodDto } from '../dtos/ShipMethodDto';

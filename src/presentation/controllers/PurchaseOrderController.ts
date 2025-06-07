@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { Request, Response } from 'express';
-import { TYPES } from '../../infrastructure/ioc/types';
+import { TYPES } from '../../ioc/types';
 import { PurchaseOrderService } from '../../application/services/PurchaseOrderService';
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from '../../application/dtos/PurchaseOrderDto';
 

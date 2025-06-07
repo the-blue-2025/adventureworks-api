@@ -4,7 +4,6 @@ export const TYPES = {
   IShipMethodRepository: Symbol.for('IShipMethodRepository'),
   IPersonRepository: Symbol.for('IPersonRepository'),
   IVendorRepository: Symbol.for('IVendorRepository'),
-  IPurchaseOrderDetailRepository: Symbol.for('IPurchaseOrderDetailRepository'),
 
   // Services
   PurchaseOrderService: Symbol.for('PurchaseOrderService'),

@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { Request, Response } from 'express';
-import { TYPES } from '../../infrastructure/ioc/types';
+import { TYPES } from '../../ioc/types';
 import { PurchaseOrderDetailService } from '../../application/services/PurchaseOrderDetailService';
-import { CreatePurchaseOrderDetailDto, UpdatePurchaseOrderDetailDto } from '../../application/dtos/PurchaseOrderDetailDto';
+import { UpdatePurchaseOrderDetailDto } from '../../application/dtos/PurchaseOrderDetailDto';
 
 @injectable()
 export class PurchaseOrderDetailController {
@@ -36,13 +36,13 @@ export class PurchaseOrderDetailController {
     }
   }
 
-  async createPurchaseOrderDetail(req: Request, res: Response): Promise<void> {
+  async getPurchaseOrderDetailsByPurchaseOrderId(req: Request, res: Response): Promise<void> {
     try {
-      const dto: CreatePurchaseOrderDetailDto = req.body;
-      const purchaseOrderDetail = await this.purchaseOrderDetailService.create(dto);
-      res.status(201).json(purchaseOrderDetail);
+      const purchaseOrderId = parseInt(req.params.purchaseOrderId);
+      const details = await this.purchaseOrderDetailService.findByPurchaseOrderId(purchaseOrderId);
+      res.json(details);
     } catch (error) {
-      res.status(500).json({ message: 'Error creating purchase order detail' });
+      res.status(500).json({ message: 'Error retrieving purchase order details' });
     }
   }
 

@@ -7,8 +7,8 @@ export function registerPurchaseOrderDetailRoutes(container: Container): Router 
   const controller = container.get<PurchaseOrderDetailController>(PurchaseOrderDetailController);
 
   router.get('/', controller.getAllPurchaseOrderDetails.bind(controller));
+  router.get('/purchase-order/:purchaseOrderId', controller.getPurchaseOrderDetailsByPurchaseOrderId.bind(controller));
   router.get('/:id', controller.getPurchaseOrderDetailById.bind(controller));
-  router.post('/', controller.createPurchaseOrderDetail.bind(controller));
   router.put('/:id', controller.updatePurchaseOrderDetail.bind(controller));
   router.delete('/:id', controller.deletePurchaseOrderDetail.bind(controller));
 

@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { TYPES } from '../../infrastructure/ioc/types';
+import { TYPES } from '../../ioc/types';
 import { IPurchaseOrderRepository } from '../../domain/repositories/IPurchaseOrderRepository';
 import { PurchaseOrder } from '../../domain/entities/PurchaseOrder';
 import { PurchaseOrderDetail } from '../../domain/entities/PurchaseOrderDetail';
