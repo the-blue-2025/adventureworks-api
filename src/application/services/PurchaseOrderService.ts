@@ -26,10 +26,15 @@ export class PurchaseOrderService {
 
   async create(dto: CreatePurchaseOrderDto): Promise<PurchaseOrderDto> {
     const purchaseOrderDetails = dto.purchaseOrderDetails?.map(detail =>
-      PurchaseOrderDetail.create({
-        purchaseOrderDetailId: 0, // Will be set by database
-        purchaseOrderId: 0, // Will be set after PurchaseOrder creation
-        ...detail,
+      PurchaseOrderDetail.createNew({
+        purchaseOrderId: 0, // Will be set by database
+        dueDate: detail.dueDate,
+        orderQty: detail.orderQty,
+        productId: detail.productId,
+        unitPrice: detail.unitPrice,
+        receivedQty: detail.receivedQty || 0,
+        rejectedQty: detail.rejectedQty || 0,
+        stockedQty: detail.stockedQty || 0,
         modifiedDate: new Date()
       })
     );
@@ -54,10 +59,15 @@ export class PurchaseOrderService {
     }
 
     const purchaseOrderDetails = dto.purchaseOrderDetails?.map(detail =>
-      PurchaseOrderDetail.create({
-        purchaseOrderDetailId: 0,
+      PurchaseOrderDetail.createNew({
         purchaseOrderId: id,
-        ...detail,
+        dueDate: detail.dueDate,
+        orderQty: detail.orderQty,
+        productId: detail.productId,
+        unitPrice: detail.unitPrice,
+        receivedQty: detail.receivedQty || 0,
+        rejectedQty: detail.rejectedQty || 0,
+        stockedQty: detail.stockedQty || 0,
         modifiedDate: new Date()
       })
     );

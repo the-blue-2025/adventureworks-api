@@ -1,31 +1,18 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
-import { Router, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { TYPES } from '../../infrastructure/ioc/types';
 import { PurchaseOrderService } from '../../application/services/PurchaseOrderService';
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from '../../application/dtos/PurchaseOrderDto';
 
 @injectable()
 export class PurchaseOrderController {
-  public router: Router;
-
   constructor(
     @inject(TYPES.PurchaseOrderService)
     private purchaseOrderService: PurchaseOrderService
-  ) {
-    this.router = Router();
-    this.initializeRoutes();
-  }
+  ) {}
 
-  private initializeRoutes(): void {
-    this.router.get('/', this.getAllPurchaseOrders.bind(this));
-    this.router.get('/:id', this.getPurchaseOrderById.bind(this));
-    this.router.post('/', this.createPurchaseOrder.bind(this));
-    this.router.put('/:id', this.updatePurchaseOrder.bind(this));
-    this.router.delete('/:id', this.deletePurchaseOrder.bind(this));
-  }
-
-  private async getAllPurchaseOrders(req: Request, res: Response): Promise<void> {
+  async getAllPurchaseOrders(req: Request, res: Response): Promise<void> {
     try {
       const purchaseOrders = await this.purchaseOrderService.findAll();
       res.json(purchaseOrders);
@@ -34,7 +21,7 @@ export class PurchaseOrderController {
     }
   }
 
-  private async getPurchaseOrderById(req: Request, res: Response): Promise<void> {
+  async getPurchaseOrderById(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       const purchaseOrder = await this.purchaseOrderService.findById(id);
@@ -49,7 +36,7 @@ export class PurchaseOrderController {
     }
   }
 
-  private async createPurchaseOrder(req: Request, res: Response): Promise<void> {
+  async createPurchaseOrder(req: Request, res: Response): Promise<void> {
     try {
       const dto: CreatePurchaseOrderDto = req.body;
       const purchaseOrder = await this.purchaseOrderService.create(dto);
@@ -59,7 +46,7 @@ export class PurchaseOrderController {
     }
   }
 
-  private async updatePurchaseOrder(req: Request, res: Response): Promise<void> {
+  async updatePurchaseOrder(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       const dto: UpdatePurchaseOrderDto = req.body;
@@ -75,7 +62,7 @@ export class PurchaseOrderController {
     }
   }
 
-  private async deletePurchaseOrder(req: Request, res: Response): Promise<void> {
+  async deletePurchaseOrder(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       await this.purchaseOrderService.delete(id);

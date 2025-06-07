@@ -70,6 +70,18 @@ export class PurchaseOrderDetail extends Entity<PurchaseOrderDetailProps> {
   }
 
   public static create(props: PurchaseOrderDetailProps): PurchaseOrderDetail {
+    // Calculate lineTotal if not provided
+    if (!props.lineTotal) {
+      props.lineTotal = props.orderQty * props.unitPrice;
+    }
     return new PurchaseOrderDetail(props);
+  }
+
+  public static createNew(props: Omit<PurchaseOrderDetailProps, 'purchaseOrderDetailId' | 'lineTotal'>): PurchaseOrderDetail {
+    return this.create({
+      ...props,
+      purchaseOrderDetailId: 0,
+      lineTotal: props.orderQty * props.unitPrice
+    });
   }
 } 

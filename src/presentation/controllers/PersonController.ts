@@ -1,30 +1,17 @@
-import { Router, Request, Response } from 'express';
 import { injectable, inject } from 'inversify';
+import { Request, Response } from 'express';
 import { TYPES } from '../../infrastructure/ioc/types';
 import { PersonService } from '../../application/services/PersonService';
 import { CreatePersonDto, UpdatePersonDto } from '../../application/dtos/PersonDto';
 
 @injectable()
 export class PersonController {
-  public router: Router;
-
   constructor(
     @inject(TYPES.PersonService)
     private personService: PersonService
-  ) {
-    this.router = Router();
-    this.initializeRoutes();
-  }
+  ) {}
 
-  private initializeRoutes() {
-    this.router.get('/', this.getAllPersons.bind(this));
-    this.router.get('/:id', this.getPersonById.bind(this));
-    this.router.post('/', this.createPerson.bind(this));
-    this.router.put('/:id', this.updatePerson.bind(this));
-    this.router.delete('/:id', this.deletePerson.bind(this));
-  }
-
-  private async getAllPersons(_req: Request, res: Response) {
+  async getAllPersons(req: Request, res: Response): Promise<void> {
     try {
       const persons = await this.personService.findAll();
       res.json(persons);
@@ -33,7 +20,7 @@ export class PersonController {
     }
   }
 
-  private async getPersonById(req: Request, res: Response) {
+  async getPersonById(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       const person = await this.personService.findById(id);
@@ -48,7 +35,7 @@ export class PersonController {
     }
   }
 
-  private async createPerson(req: Request, res: Response) {
+  async createPerson(req: Request, res: Response): Promise<void> {
     try {
       const dto: CreatePersonDto = req.body;
       const person = await this.personService.create(dto);
@@ -58,7 +45,7 @@ export class PersonController {
     }
   }
 
-  private async updatePerson(req: Request, res: Response) {
+  async updatePerson(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       const dto: UpdatePersonDto = req.body;
@@ -74,7 +61,7 @@ export class PersonController {
     }
   }
 
-  private async deletePerson(req: Request, res: Response) {
+  async deletePerson(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       await this.personService.delete(id);

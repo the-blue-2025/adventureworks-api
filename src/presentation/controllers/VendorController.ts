@@ -1,30 +1,17 @@
-import { Router, Request, Response } from 'express';
 import { injectable, inject } from 'inversify';
+import { Request, Response } from 'express';
 import { TYPES } from '../../infrastructure/ioc/types';
 import { VendorService } from '../../application/services/VendorService';
 import { CreateVendorDto, UpdateVendorDto } from '../../application/dtos/VendorDto';
 
 @injectable()
 export class VendorController {
-  public router: Router;
-
   constructor(
     @inject(TYPES.VendorService)
     private vendorService: VendorService
-  ) {
-    this.router = Router();
-    this.initializeRoutes();
-  }
+  ) {}
 
-  private initializeRoutes() {
-    this.router.get('/', this.getAllVendors.bind(this));
-    this.router.get('/:id', this.getVendorById.bind(this));
-    this.router.post('/', this.createVendor.bind(this));
-    this.router.put('/:id', this.updateVendor.bind(this));
-    this.router.delete('/:id', this.deleteVendor.bind(this));
-  }
-
-  private async getAllVendors(_req: Request, res: Response) {
+  async getAllVendors(req: Request, res: Response): Promise<void> {
     try {
       const vendors = await this.vendorService.findAll();
       res.json(vendors);
@@ -33,7 +20,7 @@ export class VendorController {
     }
   }
 
-  private async getVendorById(req: Request, res: Response) {
+  async getVendorById(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       const vendor = await this.vendorService.findById(id);
@@ -48,7 +35,7 @@ export class VendorController {
     }
   }
 
-  private async createVendor(req: Request, res: Response) {
+  async createVendor(req: Request, res: Response): Promise<void> {
     try {
       const dto: CreateVendorDto = req.body;
       const vendor = await this.vendorService.create(dto);
@@ -58,7 +45,7 @@ export class VendorController {
     }
   }
 
-  private async updateVendor(req: Request, res: Response) {
+  async updateVendor(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       const dto: UpdateVendorDto = req.body;
@@ -74,7 +61,7 @@ export class VendorController {
     }
   }
 
-  private async deleteVendor(req: Request, res: Response) {
+  async deleteVendor(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       await this.vendorService.delete(id);

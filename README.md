@@ -15,15 +15,22 @@ Ship Methods:
 - DELETE /api/v1/ship-methods/:id
 
 Persons:
-GET /api/v1/persons
-GET /api/v1/persons/:id
-POST /api/v1/persons
-PUT /api/v1/persons/:id
-DELETE /api/v1/persons/:id
+- GET /api/v1/persons
+- GET /api/v1/persons/:id
+- POST /api/v1/persons
+- PUT /api/v1/persons/:id
+- DELETE /api/v1/persons/:id
 
 Vendors:
-GET /api/v1/vendors
-GET /api/v1/vendors/:id
-POST /api/v1/vendors
-PUT /api/v1/vendors/:id
-DELETE /api/v1/vendors/:id
+- GET /api/v1/vendors
+- GET /api/v1/vendors/:id
+- POST /api/v1/vendors
+- PUT /api/v1/vendors/:id
+- DELETE /api/v1/vendors/:id
+
+Purchase Order Details:
+- GET    /api/v1/purchase-order-details
+- GET    /api/v1/purchase-order-details/:id
+- POST   /api/v1/purchase-order-details
+- PUT    /api/v1/purchase-order-details/:id
+- DELETE /api/v1/purchase-order-details/:id

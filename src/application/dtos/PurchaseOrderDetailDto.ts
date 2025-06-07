@@ -12,14 +12,14 @@ export interface PurchaseOrderDetailDto {
 }
 
 export interface CreatePurchaseOrderDetailDto {
+  purchaseOrderId: number;
   dueDate: Date;
   orderQty: number;
   productId: number;
   unitPrice: number;
-  lineTotal: number;
-  receivedQty: number;
-  rejectedQty: number;
-  stockedQty: number;
+  receivedQty?: number;
+  rejectedQty?: number;
+  stockedQty?: number;
 }
 
 export interface UpdatePurchaseOrderDetailDto {
@@ -27,7 +27,6 @@ export interface UpdatePurchaseOrderDetailDto {
   orderQty?: number;
   productId?: number;
   unitPrice?: number;
-  lineTotal?: number;
   receivedQty?: number;
   rejectedQty?: number;
   stockedQty?: number;
