@@ -7,9 +7,10 @@ import { PurchaseOrderDetail, PurchaseOrderDetailInstance } from '../database/mo
 import { ShipMethod as DomainShipMethod } from '../../domain/entities/ShipMethod';
 import { Transaction } from 'sequelize';
 import sequelize from '../database/config';
+import { BaseRepository } from './BaseRepository';
 
 @injectable()
-export class PurchaseOrderRepository implements IPurchaseOrderRepository {
+export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder, PurchaseOrderInstance, number> implements IPurchaseOrderRepository {
   async findAll(): Promise<DomainPurchaseOrder[]> {
     const purchaseOrders = await PurchaseOrder.findAll({
       include: ['shipMethod', 'purchaseOrderDetails', 'employee', 'vendor']
@@ -128,7 +129,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
     });
   }
 
-  private toDomain(model: PurchaseOrderInstance): DomainPurchaseOrder {
+  protected toDomain(model: PurchaseOrderInstance): DomainPurchaseOrder {
     const props: PurchaseOrderProps = {
       purchaseOrderId: model.purchaseOrderId,
       status: model.status,
@@ -190,23 +191,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
     return DomainPurchaseOrder.create(props);
   }
 
-  private toDetailDomain(model: PurchaseOrderDetailInstance): DomainPurchaseOrderDetail {
-    return DomainPurchaseOrderDetail.create({
-      purchaseOrderDetailId: model.purchaseOrderDetailId,
-      purchaseOrderId: model.purchaseOrderId,
-      dueDate: model.dueDate,
-      orderQty: model.orderQty,
-      productId: model.productId,
-      unitPrice: model.unitPrice,
-      lineTotal: model.lineTotal,
-      receivedQty: model.receivedQty,
-      rejectedQty: model.rejectedQty,
-      stockedQty: model.stockedQty,
-      modifiedDate: model.modifiedDate
-    });
-  }
-
-  private toPersistence(domain: DomainPurchaseOrder): any {
+  protected toPersistence(domain: DomainPurchaseOrder): any {
     return {
       purchaseOrderId: domain.purchaseOrderId,
       status: domain.status,
@@ -221,6 +206,22 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
       totalDue: domain.totalDue,
       modifiedDate: domain.modifiedDate
     };
+  }
+
+  private toDetailDomain(model: PurchaseOrderDetailInstance): DomainPurchaseOrderDetail {
+    return DomainPurchaseOrderDetail.create({
+      purchaseOrderDetailId: model.purchaseOrderDetailId,
+      purchaseOrderId: model.purchaseOrderId,
+      dueDate: model.dueDate,
+      orderQty: model.orderQty,
+      productId: model.productId,
+      unitPrice: model.unitPrice,
+      lineTotal: model.lineTotal,
+      receivedQty: model.receivedQty,
+      rejectedQty: model.rejectedQty,
+      stockedQty: model.stockedQty,
+      modifiedDate: model.modifiedDate
+    });
   }
 
   private toDetailPersistence(domain: DomainPurchaseOrderDetail): any {
