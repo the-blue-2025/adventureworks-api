@@ -2,9 +2,10 @@ import { injectable } from 'inversify';
 import { IShipMethodRepository } from '../../domain/repositories/IShipMethodRepository';
 import { ShipMethod as DomainShipMethod, ShipMethodProps } from '../../domain/entities/ShipMethod';
 import { ShipMethod, ShipMethodInstance } from '../database/models/ShipMethodModel';
+import { BaseRepository } from './BaseRepository';
 
 @injectable()
-export class ShipMethodRepository implements IShipMethodRepository {
+export class ShipMethodRepository extends BaseRepository<DomainShipMethod, ShipMethodInstance, number> implements IShipMethodRepository {
   async findAll(): Promise<DomainShipMethod[]> {
     const shipMethods = await ShipMethod.findAll();
     return shipMethods.map(sm => this.toDomain(sm));
@@ -34,7 +35,7 @@ export class ShipMethodRepository implements IShipMethodRepository {
     });
   }
 
-  private toDomain(model: ShipMethodInstance): DomainShipMethod {
+  protected toDomain(model: ShipMethodInstance): DomainShipMethod {
     return DomainShipMethod.create({
       shipMethodId: model.shipMethodId,
       name: model.name,
@@ -44,7 +45,7 @@ export class ShipMethodRepository implements IShipMethodRepository {
     });
   }
 
-  private toPersistence(domain: DomainShipMethod): any {
+  protected toPersistence(domain: DomainShipMethod): any {
     return {
       shipMethodId: domain.shipMethodId,
       name: domain.name,

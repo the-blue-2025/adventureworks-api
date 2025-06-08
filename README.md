@@ -31,37 +31,22 @@ This project is a RESTful API built to interact with the AdventureWorks database
 
 The project implements several key design patterns to ensure maintainable and scalable code:
 
-#### Domain-Driven Design (DDD)
-- Entity pattern for domain objects (e.g., Person, ShipMethod)
-- Aggregate Root pattern to maintain data consistency
-- Value Objects for immutable properties
-- Repository pattern for data access abstraction
+1. **Repository Pattern**: Abstracts the data persistence layer from the business logic. Each entity has its own repository that handles data access operations, making the code more maintainable and testable.
 
-#### Repository Pattern
-- Decouples data access logic from business logic
-- Provides consistent interface for database operations
-- Enables easier unit testing through repository abstraction
+2. **Abstract Repository Pattern**: Implements a generic base repository that defines common CRUD operations and data mapping methods. This reduces code duplication and enforces consistency across all repositories.
+   - Uses TypeScript generics for type-safe implementations
+   - Provides abstract methods for domain/persistence mapping
+   - Allows repository-specific extensions when needed
 
-#### Factory Pattern
-- Static factory methods for entity creation (e.g., ShipMethod.create())
-- Encapsulates object creation logic
-- Ensures proper initialization of entities
+3. **Dependency Injection**: Uses InversifyJS for dependency injection, making the code more modular and easier to test.
+   - Services and repositories are injectable
+   - Dependencies are resolved at runtime
+   - Facilitates easier unit testing through mocking
 
-#### Dependency Injection
-- Loose coupling between components
-- Improved testability
-- Configuration injection through environment variables
-
-#### Data Mapper Pattern
-- ORM (Sequelize) maps database tables to domain entities
-- Separates domain logic from data persistence
-- Handles database schema translations
-
-#### Service Layer Pattern
-- Orchestrates operations between controllers and repositories
-- Implements business logic and transaction management
-- Provides clean separation of concerns
-
+4. **Domain-Driven Design (DDD)**: Organizes code around business concepts and domain logic.
+   - Clear separation between domain entities and database models
+   - Business rules encapsulated in domain entities
+   - Repository interfaces defined in domain layer
 
 ### API Endpoints Summary
 

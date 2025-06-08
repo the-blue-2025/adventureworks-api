@@ -2,9 +2,10 @@ import { injectable } from 'inversify';
 import { IPersonRepository } from '../../domain/repositories/IPersonRepository';
 import { Person as DomainPerson, PersonProps } from '../../domain/entities/Person';
 import { Person, PersonInstance } from '../database/models/PersonModel';
+import { BaseRepository } from './BaseRepository';
 
 @injectable()
-export class PersonRepository implements IPersonRepository {
+export class PersonRepository extends BaseRepository<DomainPerson, PersonInstance, number> implements IPersonRepository {
   async findAll(): Promise<DomainPerson[]> {
     const persons = await Person.findAll();
     return persons.map(person => this.toDomain(person));
@@ -34,7 +35,7 @@ export class PersonRepository implements IPersonRepository {
     });
   }
 
-  private toDomain(model: PersonInstance): DomainPerson {
+  protected toDomain(model: PersonInstance): DomainPerson {
     return DomainPerson.create({
       businessEntityId: model.businessEntityId,
       personType: model.personType,
@@ -49,7 +50,7 @@ export class PersonRepository implements IPersonRepository {
     });
   }
 
-  private toPersistence(domain: DomainPerson): any {
+  protected toPersistence(domain: DomainPerson): any {
     return {
       businessEntityId: domain.businessEntityId,
       personType: domain.personType,

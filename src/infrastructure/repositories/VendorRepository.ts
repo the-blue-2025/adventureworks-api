@@ -2,9 +2,10 @@ import { injectable } from 'inversify';
 import { IVendorRepository } from '../../domain/repositories/IVendorRepository';
 import { Vendor as DomainVendor } from '../../domain/entities/Vendor';
 import { Vendor, VendorInstance } from '../database/models/VendorModel';
+import { BaseRepository } from './BaseRepository';
 
 @injectable()
-export class VendorRepository implements IVendorRepository {
+export class VendorRepository extends BaseRepository<DomainVendor, VendorInstance, number> implements IVendorRepository {
   async findAll(): Promise<DomainVendor[]> {
     const vendors = await Vendor.findAll();
     return vendors.map(vendor => this.toDomain(vendor));
@@ -34,7 +35,7 @@ export class VendorRepository implements IVendorRepository {
     });
   }
 
-  private toDomain(model: VendorInstance): DomainVendor {
+  protected toDomain(model: VendorInstance): DomainVendor {
     return DomainVendor.create({
       businessEntityId: model.businessEntityId,
       accountNumber: model.accountNumber,
@@ -47,7 +48,7 @@ export class VendorRepository implements IVendorRepository {
     });
   }
 
-  private toPersistence(domain: DomainVendor): any {
+  protected toPersistence(domain: DomainVendor): any {
     return {
       businessEntityId: domain.businessEntityId,
       accountNumber: domain.accountNumber,
