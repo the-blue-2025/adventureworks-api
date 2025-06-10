@@ -6,33 +6,10 @@ import { BaseRepository } from './BaseRepository';
 
 @injectable()
 export class VendorRepository extends BaseRepository<DomainVendor, VendorInstance, number> implements IVendorRepository {
-  async findAll(): Promise<DomainVendor[]> {
-    const vendors = await Vendor.findAll();
-    return vendors.map(vendor => this.toDomain(vendor));
-  }
+  protected readonly model = Vendor;
 
-  async findById(id: number): Promise<DomainVendor | null> {
-    const vendor = await Vendor.findByPk(id);
-    return vendor ? this.toDomain(vendor) : null;
-  }
-
-  async create(vendor: DomainVendor): Promise<void> {
-    await Vendor.create(this.toPersistence(vendor));
-  }
-
-  async update(vendor: DomainVendor): Promise<void> {
-    await Vendor.update(
-      this.toPersistence(vendor),
-      {
-        where: { businessEntityId: vendor.businessEntityId }
-      }
-    );
-  }
-
-  async delete(id: number): Promise<void> {
-    await Vendor.destroy({
-      where: { businessEntityId: id }
-    });
+  protected getIdField(): string {
+    return 'businessEntityId';
   }
 
   protected toDomain(model: VendorInstance): DomainVendor {

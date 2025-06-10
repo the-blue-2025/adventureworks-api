@@ -6,33 +6,10 @@ import { BaseRepository } from './BaseRepository';
 
 @injectable()
 export class PersonRepository extends BaseRepository<DomainPerson, PersonInstance, number> implements IPersonRepository {
-  async findAll(): Promise<DomainPerson[]> {
-    const persons = await Person.findAll();
-    return persons.map(person => this.toDomain(person));
-  }
+  protected readonly model = Person;
 
-  async findById(id: number): Promise<DomainPerson | null> {
-    const person = await Person.findByPk(id);
-    return person ? this.toDomain(person) : null;
-  }
-
-  async create(person: DomainPerson): Promise<void> {
-    await Person.create(this.toPersistence(person));
-  }
-
-  async update(person: DomainPerson): Promise<void> {
-    await Person.update(
-      this.toPersistence(person),
-      {
-        where: { businessEntityId: person.businessEntityId }
-      }
-    );
-  }
-
-  async delete(id: number): Promise<void> {
-    await Person.destroy({
-      where: { businessEntityId: id }
-    });
+  protected getIdField(): string {
+    return 'businessEntityId';
   }
 
   protected toDomain(model: PersonInstance): DomainPerson {

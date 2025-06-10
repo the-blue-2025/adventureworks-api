@@ -5,45 +5,38 @@ import { PurchaseOrderDetail as DomainPurchaseOrderDetail } from '../../domain/e
 import { PurchaseOrder, PurchaseOrderInstance } from '../database/models/PurchaseOrderModel';
 import { PurchaseOrderDetail, PurchaseOrderDetailInstance } from '../database/models/PurchaseOrderDetailModel';
 import { ShipMethod as DomainShipMethod } from '../../domain/entities/ShipMethod';
-import { Transaction } from 'sequelize';
+import { Transaction, WhereOptions } from 'sequelize';
 import sequelize from '../database/config';
 import { BaseRepository } from './BaseRepository';
 
 @injectable()
 export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder, PurchaseOrderInstance, number> implements IPurchaseOrderRepository {
+  protected readonly model = PurchaseOrder;
+
+  protected getIdField(): string {
+    return 'purchaseOrderId';
+  }
+
+  // Override base methods to include relationships
   async findAll(): Promise<DomainPurchaseOrder[]> {
-    const purchaseOrders = await PurchaseOrder.findAll({
+    const purchaseOrders = await this.model.findAll({
       include: ['shipMethod', 'purchaseOrderDetails', 'employee', 'vendor']
     });
     return purchaseOrders.map((po: PurchaseOrderInstance) => this.toDomain(po));
   }
 
   async findById(id: number): Promise<DomainPurchaseOrder | null> {
-    const purchaseOrder = await PurchaseOrder.findByPk(id, {
+    const purchaseOrder = await this.model.findByPk(id, {
       include: ['shipMethod', 'purchaseOrderDetails', 'employee', 'vendor']
     });
     return purchaseOrder ? this.toDomain(purchaseOrder) : null;
   }
 
-  async findDetailById(id: number): Promise<DomainPurchaseOrderDetail | null> {
-    const detail = await PurchaseOrderDetail.findByPk(id, {
-      include: ['purchaseOrder']
-    });
-    return detail ? this.toDetailDomain(detail) : null;
-  }
-
-  async findDetailsByPurchaseOrderId(purchaseOrderId: number): Promise<DomainPurchaseOrderDetail[]> {
-    const details = await PurchaseOrderDetail.findAll({
-      where: { purchaseOrderId },
-      include: ['purchaseOrder']
-    });
-    return details.map(detail => this.toDetailDomain(detail));
-  }
-
+  // Override create to handle details in transaction
   async create(purchaseOrder: DomainPurchaseOrder): Promise<void> {
     const t = await sequelize.transaction();
     try {
-      const createdPO = await PurchaseOrder.create(this.toPersistence(purchaseOrder), { transaction: t });
+      const createdPO = await this.model.create(this.toPersistence(purchaseOrder), { transaction: t });
       
       if (purchaseOrder.purchaseOrderDetails) {
         const details = purchaseOrder.purchaseOrderDetails.map(detail => ({
@@ -60,25 +53,23 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
     }
   }
 
+  // Override update to handle details in transaction
   async update(purchaseOrder: DomainPurchaseOrder): Promise<void> {
     const t = await sequelize.transaction();
     try {
-      await PurchaseOrder.update(
+      const where = { purchaseOrderId: purchaseOrder.purchaseOrderId } as WhereOptions<PurchaseOrderInstance>;
+      await this.model.update(
         this.toPersistence(purchaseOrder),
-        {
-          where: { purchaseOrderId: purchaseOrder.purchaseOrderId },
-          transaction: t
-        }
+        { where, transaction: t }
       );
 
       if (purchaseOrder.purchaseOrderDetails) {
-        // Delete existing details
+        const detailsWhere = { purchaseOrderId: purchaseOrder.purchaseOrderId } as WhereOptions<PurchaseOrderDetailInstance>;
         await PurchaseOrderDetail.destroy({
-          where: { purchaseOrderId: purchaseOrder.purchaseOrderId },
+          where: detailsWhere,
           transaction: t
         });
 
-        // Create new details
         const details = purchaseOrder.purchaseOrderDetails.map(detail => ({
           ...this.toDetailPersistence(detail),
           purchaseOrderId: purchaseOrder.purchaseOrderId
@@ -93,26 +84,19 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
     }
   }
 
-  async updateDetail(purchaseOrderDetail: DomainPurchaseOrderDetail): Promise<void> {
-    await PurchaseOrderDetail.update(
-      this.toDetailPersistence(purchaseOrderDetail),
-      {
-        where: { purchaseOrderDetailId: purchaseOrderDetail.purchaseOrderDetailId }
-      }
-    );
-  }
-
+  // Override delete to handle details in transaction
   async delete(id: number): Promise<void> {
     const t = await sequelize.transaction();
     try {
-      // Delete details first due to foreign key constraint
+      const detailsWhere = { purchaseOrderId: id } as WhereOptions<PurchaseOrderDetailInstance>;
       await PurchaseOrderDetail.destroy({
-        where: { purchaseOrderId: id },
+        where: detailsWhere,
         transaction: t
       });
 
-      await PurchaseOrder.destroy({
-        where: { purchaseOrderId: id },
+      const where = { purchaseOrderId: id } as WhereOptions<PurchaseOrderInstance>;
+      await this.model.destroy({
+        where,
         transaction: t
       });
 
@@ -123,10 +107,34 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
     }
   }
 
-  async deleteDetail(id: number): Promise<void> {
-    await PurchaseOrderDetail.destroy({
-      where: { purchaseOrderDetailId: id }
+  // Additional methods specific to PurchaseOrder
+  async findDetailById(id: number): Promise<DomainPurchaseOrderDetail | null> {
+    const detail = await PurchaseOrderDetail.findByPk(id, {
+      include: ['purchaseOrder']
     });
+    return detail ? this.toDetailDomain(detail) : null;
+  }
+
+  async findDetailsByPurchaseOrderId(purchaseOrderId: number): Promise<DomainPurchaseOrderDetail[]> {
+    const where = { purchaseOrderId } as WhereOptions<PurchaseOrderDetailInstance>;
+    const details = await PurchaseOrderDetail.findAll({
+      where,
+      include: ['purchaseOrder']
+    });
+    return details.map(detail => this.toDetailDomain(detail));
+  }
+
+  async updateDetail(purchaseOrderDetail: DomainPurchaseOrderDetail): Promise<void> {
+    const where = { purchaseOrderDetailId: purchaseOrderDetail.purchaseOrderDetailId } as WhereOptions<PurchaseOrderDetailInstance>;
+    await PurchaseOrderDetail.update(
+      this.toDetailPersistence(purchaseOrderDetail),
+      { where }
+    );
+  }
+
+  async deleteDetail(id: number): Promise<void> {
+    const where = { purchaseOrderDetailId: id } as WhereOptions<PurchaseOrderDetailInstance>;
+    await PurchaseOrderDetail.destroy({ where });
   }
 
   protected toDomain(model: PurchaseOrderInstance): DomainPurchaseOrder {
@@ -149,7 +157,7 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
         name: model.shipMethod.name,
         shipBase: model.shipMethod.shipBase,
         shipRate: model.shipMethod.shipRate,
-        modifiedDate: model.shipMethod.modifiedDate
+        modifiedDate: model.modifiedDate
       });
     }
 
