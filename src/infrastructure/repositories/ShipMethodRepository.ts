@@ -6,33 +6,10 @@ import { BaseRepository } from './BaseRepository';
 
 @injectable()
 export class ShipMethodRepository extends BaseRepository<DomainShipMethod, ShipMethodInstance, number> implements IShipMethodRepository {
-  async findAll(): Promise<DomainShipMethod[]> {
-    const shipMethods = await ShipMethod.findAll();
-    return shipMethods.map(sm => this.toDomain(sm));
-  }
+  protected readonly model = ShipMethod;
 
-  async findById(id: number): Promise<DomainShipMethod | null> {
-    const shipMethod = await ShipMethod.findByPk(id);
-    return shipMethod ? this.toDomain(shipMethod) : null;
-  }
-
-  async create(shipMethod: DomainShipMethod): Promise<void> {
-    await ShipMethod.create(this.toPersistence(shipMethod));
-  }
-
-  async update(shipMethod: DomainShipMethod): Promise<void> {
-    await ShipMethod.update(
-      this.toPersistence(shipMethod),
-      {
-        where: { shipMethodId: shipMethod.shipMethodId }
-      }
-    );
-  }
-
-  async delete(id: number): Promise<void> {
-    await ShipMethod.destroy({
-      where: { shipMethodId: id }
-    });
+  protected getIdField(): string {
+    return 'shipMethodId';
   }
 
   protected toDomain(model: ShipMethodInstance): DomainShipMethod {

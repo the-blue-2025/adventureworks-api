@@ -33,10 +33,16 @@ The project implements several key design patterns to ensure maintainable and sc
 
 1. **Repository Pattern**: Abstracts the data persistence layer from the business logic. Each entity has its own repository that handles data access operations, making the code more maintainable and testable.
 
-2. **Abstract Repository Pattern**: Implements a generic base repository that defines common CRUD operations and data mapping methods. This reduces code duplication and enforces consistency across all repositories.
+2. **Template Method Pattern**: Implemented in the repository layer to standardize CRUD operations while allowing entity-specific customization.
+   - Base repository defines the template for CRUD operations using TypeScript generics
+   - Concrete repositories only implement entity-specific methods:
+     - ID field name specification
+     - Domain/persistence object mapping
+     - Custom operations when needed (e.g., relationship handling)
+   - Reduces code duplication and enforces consistent data access patterns
+   - Allows for flexible extension points in specific repositories
    - Uses TypeScript generics for type-safe implementations
    - Provides abstract methods for domain/persistence mapping
-   - Allows repository-specific extensions when needed
 
 3. **Dependency Injection**: Uses InversifyJS for dependency injection, making the code more modular and easier to test.
    - Services and repositories are injectable
