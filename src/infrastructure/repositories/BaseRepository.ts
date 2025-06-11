@@ -1,5 +1,6 @@
 import { injectable } from 'inversify';
 import { Model, ModelStatic, Identifier, WhereOptions } from 'sequelize';
+import { RepositoryError } from '../../domain/errors/RepositoryError';
 
 /**
  * Abstract base repository that provides common CRUD operations using Template Method pattern
@@ -17,11 +18,25 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
   protected abstract getIdField(): string;
 
   /**
+   * Get the entity name for error messages
+   */
+  protected abstract getEntityName(): string;
+
+  /**
    * Find all entities - Template Method implementation
    */
   async findAll(): Promise<TDomain[]> {
-    const models = await this.model.findAll();
-    return models.map(model => this.toDomain(model as TModel));
+    try {
+      const models = await this.model.findAll();
+      return models.map(model => this.toDomain(model as TModel));
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to fetch all ${this.getEntityName()} entities`,
+        'findAll',
+        this.getEntityName(),
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   /**
@@ -29,8 +44,17 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
    * @param id - Entity ID
    */
   async findById(id: TId): Promise<TDomain | null> {
-    const model = await this.model.findByPk(id);
-    return model ? this.toDomain(model as TModel) : null;
+    try {
+      const model = await this.model.findByPk(id);
+      return model ? this.toDomain(model as TModel) : null;
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to fetch ${this.getEntityName()} with ID ${id}`,
+        'findById',
+        this.getEntityName(),
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   /**
@@ -38,7 +62,16 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
    * @param entity - Domain entity to create
    */
   async create(entity: TDomain): Promise<void> {
-    await this.model.create(this.toPersistence(entity));
+    try {
+      await this.model.create(this.toPersistence(entity));
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to create ${this.getEntityName()}`,
+        'create',
+        this.getEntityName(),
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   /**
@@ -46,12 +79,21 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
    * @param entity - Domain entity to update
    */
   async update(entity: TDomain): Promise<void> {
-    const persistenceData = this.toPersistence(entity);
-    const where = { [this.getIdField()]: persistenceData[this.getIdField()] } as WhereOptions<TModel>;
-    await this.model.update(
-      persistenceData,
-      { where }
-    );
+    try {
+      const persistenceData = this.toPersistence(entity);
+      const where = { [this.getIdField()]: persistenceData[this.getIdField()] } as WhereOptions<TModel>;
+      await this.model.update(
+        persistenceData,
+        { where }
+      );
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to update ${this.getEntityName()}`,
+        'update',
+        this.getEntityName(),
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   /**
@@ -59,8 +101,17 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
    * @param id - Entity ID
    */
   async delete(id: TId): Promise<void> {
-    const where = { [this.getIdField()]: id } as WhereOptions<TModel>;
-    await this.model.destroy({ where });
+    try {
+      const where = { [this.getIdField()]: id } as WhereOptions<TModel>;
+      await this.model.destroy({ where });
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to delete ${this.getEntityName()} with ID ${id}`,
+        'delete',
+        this.getEntityName(),
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   /**

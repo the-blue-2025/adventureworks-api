@@ -12,6 +12,10 @@ export class PersonRepository extends BaseRepository<DomainPerson, PersonInstanc
     return 'businessEntityId';
   }
 
+  protected getEntityName(): string {
+    return 'Person';
+  }
+
   protected toDomain(model: PersonInstance): DomainPerson {
     return DomainPerson.create({
       businessEntityId: model.businessEntityId,

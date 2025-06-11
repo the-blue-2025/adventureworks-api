@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { TYPES } from '../../ioc/types';
 import { VendorService } from '../../application/services/VendorService';
 import { CreateVendorDto, UpdateVendorDto } from '../../application/dtos/VendorDto';
+import { HttpStatusCode } from '../constants/HttpStatusCodes';
 
 @injectable()
 export class VendorController {
@@ -14,9 +15,9 @@ export class VendorController {
   async getAllVendors(req: Request, res: Response): Promise<void> {
     try {
       const vendors = await this.vendorService.findAll();
-      res.json(vendors);
+      res.status(HttpStatusCode.OK).json(vendors);
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving vendors' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error retrieving vendors' });
     }
   }
 
@@ -26,12 +27,12 @@ export class VendorController {
       const vendor = await this.vendorService.findById(id);
       
       if (vendor) {
-        res.json(vendor);
+        res.status(HttpStatusCode.OK).json(vendor);
       } else {
-        res.status(404).json({ message: 'Vendor not found' });
+        res.status(HttpStatusCode.NOT_FOUND).json({ message: 'Vendor not found' });
       }
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving vendor' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error retrieving vendor' });
     }
   }
 
@@ -39,9 +40,9 @@ export class VendorController {
     try {
       const dto: CreateVendorDto = req.body;
       const vendor = await this.vendorService.create(dto);
-      res.status(201).json(vendor);
+      res.status(HttpStatusCode.CREATED).json(vendor);
     } catch (error) {
-      res.status(500).json({ message: 'Error creating vendor' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error creating vendor' });
     }
   }
 
@@ -52,12 +53,12 @@ export class VendorController {
       const vendor = await this.vendorService.update(id, dto);
       
       if (vendor) {
-        res.json(vendor);
+        res.status(HttpStatusCode.OK).json(vendor);
       } else {
-        res.status(404).json({ message: 'Vendor not found' });
+        res.status(HttpStatusCode.NOT_FOUND).json({ message: 'Vendor not found' });
       }
     } catch (error) {
-      res.status(500).json({ message: 'Error updating vendor' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error updating vendor' });
     }
   }
 
@@ -65,9 +66,9 @@ export class VendorController {
     try {
       const id = parseInt(req.params.id);
       await this.vendorService.delete(id);
-      res.status(204).send();
+      res.status(HttpStatusCode.NO_CONTENT).send();
     } catch (error) {
-      res.status(500).json({ message: 'Error deleting vendor' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error deleting vendor' });
     }
   }
 } 

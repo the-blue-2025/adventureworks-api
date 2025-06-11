@@ -12,6 +12,10 @@ export class ShipMethodRepository extends BaseRepository<DomainShipMethod, ShipM
     return 'shipMethodId';
   }
 
+  protected getEntityName(): string {
+    return 'ShipMethod';
+  }
+
   protected toDomain(model: ShipMethodInstance): DomainShipMethod {
     return DomainShipMethod.create({
       shipMethodId: model.shipMethodId,

@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { TYPES } from '../../ioc/types';
 import { PurchaseOrderService } from '../../application/services/PurchaseOrderService';
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from '../../application/dtos/PurchaseOrderDto';
+import { HttpStatusCode } from '../constants/HttpStatusCodes';
 
 @injectable()
 export class PurchaseOrderController {
@@ -15,9 +16,9 @@ export class PurchaseOrderController {
   async getAllPurchaseOrders(req: Request, res: Response): Promise<void> {
     try {
       const purchaseOrders = await this.purchaseOrderService.findAll();
-      res.json(purchaseOrders);
+      res.status(HttpStatusCode.OK).json(purchaseOrders);
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving purchase orders' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error retrieving purchase orders' });
     }
   }
 
@@ -27,12 +28,12 @@ export class PurchaseOrderController {
       const purchaseOrder = await this.purchaseOrderService.findById(id);
       
       if (purchaseOrder) {
-        res.json(purchaseOrder);
+        res.status(HttpStatusCode.OK).json(purchaseOrder);
       } else {
-        res.status(404).json({ message: 'Purchase order not found' });
+        res.status(HttpStatusCode.NOT_FOUND).json({ message: 'Purchase order not found' });
       }
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving purchase order' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error retrieving purchase order' });
     }
   }
 
@@ -40,9 +41,9 @@ export class PurchaseOrderController {
     try {
       const dto: CreatePurchaseOrderDto = req.body;
       const purchaseOrder = await this.purchaseOrderService.create(dto);
-      res.status(201).json(purchaseOrder);
+      res.status(HttpStatusCode.CREATED).json(purchaseOrder);
     } catch (error) {
-      res.status(500).json({ message: 'Error creating purchase order' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error creating purchase order' });
     }
   }
 
@@ -53,12 +54,12 @@ export class PurchaseOrderController {
       const purchaseOrder = await this.purchaseOrderService.update(id, dto);
       
       if (purchaseOrder) {
-        res.json(purchaseOrder);
+        res.status(HttpStatusCode.OK).json(purchaseOrder);
       } else {
-        res.status(404).json({ message: 'Purchase order not found' });
+        res.status(HttpStatusCode.NOT_FOUND).json({ message: 'Purchase order not found' });
       }
     } catch (error) {
-      res.status(500).json({ message: 'Error updating purchase order' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error updating purchase order' });
     }
   }
 
@@ -66,9 +67,9 @@ export class PurchaseOrderController {
     try {
       const id = parseInt(req.params.id);
       await this.purchaseOrderService.delete(id);
-      res.status(204).send();
+      res.status(HttpStatusCode.NO_CONTENT).send();
     } catch (error) {
-      res.status(500).json({ message: 'Error deleting purchase order' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error deleting purchase order' });
     }
   }
 } 

@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { TYPES } from '../../ioc/types';
 import { ShipMethodService } from '../../application/services/ShipMethodService';
 import { CreateShipMethodDto, UpdateShipMethodDto } from '../../application/dtos/ShipMethodDto';
+import { HttpStatusCode } from '../constants/HttpStatusCodes';
 
 @injectable()
 export class ShipMethodController {
@@ -11,12 +12,12 @@ export class ShipMethodController {
     private shipMethodService: ShipMethodService
   ) {}
 
-  async getShipMethods(req: Request, res: Response): Promise<void> {
+  async getAllShipMethods(req: Request, res: Response): Promise<void> {
     try {
       const shipMethods = await this.shipMethodService.findAll();
-      res.json(shipMethods);
+      res.status(HttpStatusCode.OK).json(shipMethods);
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving ship methods' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error retrieving ship methods' });
     }
   }
 
@@ -26,12 +27,12 @@ export class ShipMethodController {
       const shipMethod = await this.shipMethodService.findById(id);
       
       if (shipMethod) {
-        res.json(shipMethod);
+        res.status(HttpStatusCode.OK).json(shipMethod);
       } else {
-        res.status(404).json({ message: 'Ship method not found' });
+        res.status(HttpStatusCode.NOT_FOUND).json({ message: 'Ship method not found' });
       }
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving ship method' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error retrieving ship method' });
     }
   }
 
@@ -39,9 +40,9 @@ export class ShipMethodController {
     try {
       const dto: CreateShipMethodDto = req.body;
       const shipMethod = await this.shipMethodService.create(dto);
-      res.status(201).json(shipMethod);
+      res.status(HttpStatusCode.CREATED).json(shipMethod);
     } catch (error) {
-      res.status(500).json({ message: 'Error creating ship method' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error creating ship method' });
     }
   }
 
@@ -52,12 +53,12 @@ export class ShipMethodController {
       const shipMethod = await this.shipMethodService.update(id, dto);
       
       if (shipMethod) {
-        res.json(shipMethod);
+        res.status(HttpStatusCode.OK).json(shipMethod);
       } else {
-        res.status(404).json({ message: 'Ship method not found' });
+        res.status(HttpStatusCode.NOT_FOUND).json({ message: 'Ship method not found' });
       }
     } catch (error) {
-      res.status(500).json({ message: 'Error updating ship method' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error updating ship method' });
     }
   }
 
@@ -65,9 +66,9 @@ export class ShipMethodController {
     try {
       const id = parseInt(req.params.id);
       await this.shipMethodService.delete(id);
-      res.status(204).send();
+      res.status(HttpStatusCode.NO_CONTENT).send();
     } catch (error) {
-      res.status(500).json({ message: 'Error deleting ship method' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error deleting ship method' });
     }
   }
 } 

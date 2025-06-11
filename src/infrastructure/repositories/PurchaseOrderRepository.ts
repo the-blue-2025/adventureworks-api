@@ -8,6 +8,7 @@ import { ShipMethod as DomainShipMethod } from '../../domain/entities/ShipMethod
 import { Transaction, WhereOptions } from 'sequelize';
 import sequelize from '../database/config';
 import { BaseRepository } from './BaseRepository';
+import { RepositoryError } from '../../domain/errors/RepositoryError';
 
 @injectable()
 export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder, PurchaseOrderInstance, number> implements IPurchaseOrderRepository {
@@ -17,19 +18,41 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
     return 'purchaseOrderId';
   }
 
+  protected getEntityName(): string {
+    return 'PurchaseOrder';
+  }
+
   // Override base methods to include relationships
   async findAll(): Promise<DomainPurchaseOrder[]> {
-    const purchaseOrders = await this.model.findAll({
-      include: ['shipMethod', 'purchaseOrderDetails', 'employee', 'vendor']
-    });
-    return purchaseOrders.map((po: PurchaseOrderInstance) => this.toDomain(po));
+    try {
+      const purchaseOrders = await this.model.findAll({
+        include: ['shipMethod', 'purchaseOrderDetails', 'employee', 'vendor']
+      });
+      return purchaseOrders.map((po: PurchaseOrderInstance) => this.toDomain(po));
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to fetch all purchase orders with relationships`,
+        'findAll',
+        this.getEntityName(),
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   async findById(id: number): Promise<DomainPurchaseOrder | null> {
-    const purchaseOrder = await this.model.findByPk(id, {
-      include: ['shipMethod', 'purchaseOrderDetails', 'employee', 'vendor']
-    });
-    return purchaseOrder ? this.toDomain(purchaseOrder) : null;
+    try {
+      const purchaseOrder = await this.model.findByPk(id, {
+        include: ['shipMethod', 'purchaseOrderDetails', 'employee', 'vendor']
+      });
+      return purchaseOrder ? this.toDomain(purchaseOrder) : null;
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to fetch purchase order with ID ${id} and its relationships`,
+        'findById',
+        this.getEntityName(),
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   // Override create to handle details in transaction
@@ -49,7 +72,12 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
       await t.commit();
     } catch (error) {
       await t.rollback();
-      throw error;
+      throw new RepositoryError(
+        `Failed to create purchase order with its details`,
+        'create',
+        this.getEntityName(),
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
@@ -80,7 +108,12 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
       await t.commit();
     } catch (error) {
       await t.rollback();
-      throw error;
+      throw new RepositoryError(
+        `Failed to update purchase order with ID ${purchaseOrder.purchaseOrderId} and its details`,
+        'update',
+        this.getEntityName(),
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
@@ -103,38 +136,92 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
       await t.commit();
     } catch (error) {
       await t.rollback();
-      throw error;
+      throw new RepositoryError(
+        `Failed to delete purchase order with ID ${id} and its details`,
+        'delete',
+        this.getEntityName(),
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
   // Additional methods specific to PurchaseOrder
   async findDetailById(id: number): Promise<DomainPurchaseOrderDetail | null> {
-    const detail = await PurchaseOrderDetail.findByPk(id, {
-      include: ['purchaseOrder']
-    });
-    return detail ? this.toDetailDomain(detail) : null;
+    try {
+      const detail = await PurchaseOrderDetail.findByPk(id, {
+        include: ['purchaseOrder']
+      });
+      return detail ? this.toDetailDomain(detail) : null;
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to fetch purchase order detail with ID ${id}`,
+        'findDetailById',
+        'PurchaseOrderDetail',
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   async findDetailsByPurchaseOrderId(purchaseOrderId: number): Promise<DomainPurchaseOrderDetail[]> {
-    const where = { purchaseOrderId } as WhereOptions<PurchaseOrderDetailInstance>;
-    const details = await PurchaseOrderDetail.findAll({
-      where,
-      include: ['purchaseOrder']
-    });
-    return details.map(detail => this.toDetailDomain(detail));
+    try {
+      const where = { purchaseOrderId } as WhereOptions<PurchaseOrderDetailInstance>;
+      const details = await PurchaseOrderDetail.findAll({
+        where,
+        include: ['purchaseOrder']
+      });
+      return details.map(detail => this.toDetailDomain(detail));
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to fetch purchase order details for purchase order ID ${purchaseOrderId}`,
+        'findDetailsByPurchaseOrderId',
+        'PurchaseOrderDetail',
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   async updateDetail(purchaseOrderDetail: DomainPurchaseOrderDetail): Promise<void> {
-    const where = { purchaseOrderDetailId: purchaseOrderDetail.purchaseOrderDetailId } as WhereOptions<PurchaseOrderDetailInstance>;
-    await PurchaseOrderDetail.update(
-      this.toDetailPersistence(purchaseOrderDetail),
-      { where }
-    );
+    try {
+      const where = { purchaseOrderDetailId: purchaseOrderDetail.purchaseOrderDetailId } as WhereOptions<PurchaseOrderDetailInstance>;
+      await PurchaseOrderDetail.update(
+        this.toDetailPersistence(purchaseOrderDetail),
+        { where }
+      );
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to update purchase order detail with ID ${purchaseOrderDetail.purchaseOrderDetailId}`,
+        'updateDetail',
+        'PurchaseOrderDetail',
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   async deleteDetail(id: number): Promise<void> {
-    const where = { purchaseOrderDetailId: id } as WhereOptions<PurchaseOrderDetailInstance>;
-    await PurchaseOrderDetail.destroy({ where });
+    try {
+      const where = { purchaseOrderDetailId: id } as WhereOptions<PurchaseOrderDetailInstance>;
+      await PurchaseOrderDetail.destroy({ where });
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to delete purchase order detail with ID ${id}`,
+        'deleteDetail',
+        'PurchaseOrderDetail',
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  async createDetail(purchaseOrderDetail: DomainPurchaseOrderDetail): Promise<void> {
+    try {
+      await PurchaseOrderDetail.create(this.toDetailPersistence(purchaseOrderDetail));
+    } catch (error) {
+      throw new RepositoryError(
+        `Failed to create purchase order detail for purchase order ID ${purchaseOrderDetail.purchaseOrderId}`,
+        'createDetail',
+        'PurchaseOrderDetail',
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   protected toDomain(model: PurchaseOrderInstance): DomainPurchaseOrder {

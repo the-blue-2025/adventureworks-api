@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { TYPES } from '../../ioc/types';
 import { PersonService } from '../../application/services/PersonService';
 import { CreatePersonDto, UpdatePersonDto } from '../../application/dtos/PersonDto';
+import { HttpStatusCode } from '../constants/HttpStatusCodes';
 
 @injectable()
 export class PersonController {
@@ -14,9 +15,9 @@ export class PersonController {
   async getAllPersons(req: Request, res: Response): Promise<void> {
     try {
       const persons = await this.personService.findAll();
-      res.json(persons);
+      res.status(HttpStatusCode.OK).json(persons);
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving persons' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error retrieving persons' });
     }
   }
 
@@ -26,12 +27,12 @@ export class PersonController {
       const person = await this.personService.findById(id);
       
       if (person) {
-        res.json(person);
+        res.status(HttpStatusCode.OK).json(person);
       } else {
-        res.status(404).json({ message: 'Person not found' });
+        res.status(HttpStatusCode.NOT_FOUND).json({ message: 'Person not found' });
       }
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving person' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error retrieving person' });
     }
   }
 
@@ -39,9 +40,9 @@ export class PersonController {
     try {
       const dto: CreatePersonDto = req.body;
       const person = await this.personService.create(dto);
-      res.status(201).json(person);
+      res.status(HttpStatusCode.CREATED).json(person);
     } catch (error) {
-      res.status(500).json({ message: 'Error creating person' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error creating person' });
     }
   }
 
@@ -52,12 +53,12 @@ export class PersonController {
       const person = await this.personService.update(id, dto);
       
       if (person) {
-        res.json(person);
+        res.status(HttpStatusCode.OK).json(person);
       } else {
-        res.status(404).json({ message: 'Person not found' });
+        res.status(HttpStatusCode.NOT_FOUND).json({ message: 'Person not found' });
       }
     } catch (error) {
-      res.status(500).json({ message: 'Error updating person' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error updating person' });
     }
   }
 
@@ -65,9 +66,9 @@ export class PersonController {
     try {
       const id = parseInt(req.params.id);
       await this.personService.delete(id);
-      res.status(204).send();
+      res.status(HttpStatusCode.NO_CONTENT).send();
     } catch (error) {
-      res.status(500).json({ message: 'Error deleting person' });
+      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({ message: 'Error deleting person' });
     }
   }
 } 
