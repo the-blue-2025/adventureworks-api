@@ -2,7 +2,7 @@ import { injectable, inject } from 'inversify';
 import { TYPES } from '../../ioc/types';
 import { IPurchaseOrderRepository } from '../../domain/repositories/IPurchaseOrderRepository';
 import { PurchaseOrderDetail } from '../../domain/entities/PurchaseOrderDetail';
-import { PurchaseOrderDetailDto, UpdatePurchaseOrderDetailDto } from '../dtos/PurchaseOrderDetailDto';
+import { PurchaseOrderDetailDto, CreatePurchaseOrderDetailDto, UpdatePurchaseOrderDetailDto } from '../dtos/PurchaseOrderDetailDto';
 
 @injectable()
 export class PurchaseOrderDetailService {
@@ -20,6 +20,28 @@ export class PurchaseOrderDetailService {
       }
     });
     return details.map(detail => this.toDto(detail));
+  }
+
+  async create(dto: CreatePurchaseOrderDetailDto): Promise<PurchaseOrderDetailDto> {
+    // Calculate lineTotal based on orderQty and unitPrice
+    const lineTotal = dto.orderQty * dto.unitPrice;
+
+    const detail = PurchaseOrderDetail.create({
+      purchaseOrderDetailId: 0, // This will be set by the database
+      purchaseOrderId: dto.purchaseOrderId,
+      dueDate: dto.dueDate,
+      orderQty: dto.orderQty,
+      productId: dto.productId,
+      unitPrice: dto.unitPrice,
+      lineTotal: lineTotal,
+      receivedQty: dto.receivedQty ?? 0,
+      rejectedQty: dto.rejectedQty ?? 0,
+      stockedQty: dto.stockedQty ?? 0,
+      modifiedDate: new Date()
+    });
+
+    await this.purchaseOrderRepository.createDetail(detail);
+    return this.toDto(detail);
   }
 
   async findById(id: number): Promise<PurchaseOrderDetailDto | null> {

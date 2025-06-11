@@ -12,6 +12,10 @@ export class VendorRepository extends BaseRepository<DomainVendor, VendorInstanc
     return 'businessEntityId';
   }
 
+  protected getEntityName(): string {
+    return 'Vendor';
+  }
+
   protected toDomain(model: VendorInstance): DomainVendor {
     return DomainVendor.create({
       businessEntityId: model.businessEntityId,

@@ -7,6 +7,7 @@ export interface IPurchaseOrderRepository {
   findDetailById(id: number): Promise<PurchaseOrderDetail | null>;
   findDetailsByPurchaseOrderId(purchaseOrderId: number): Promise<PurchaseOrderDetail[]>;
   create(purchaseOrder: PurchaseOrder): Promise<void>;
+  createDetail(purchaseOrderDetail: PurchaseOrderDetail): Promise<void>;
   update(purchaseOrder: PurchaseOrder): Promise<void>;
   updateDetail(purchaseOrderDetail: PurchaseOrderDetail): Promise<void>;
   delete(id: number): Promise<void>;

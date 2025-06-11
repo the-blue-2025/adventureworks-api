@@ -6,7 +6,7 @@ export function registerShipMethodRoutes(container: Container): Router {
   const router = Router();
   const controller = container.get<ShipMethodController>(ShipMethodController);
 
-  router.get('/', controller.getShipMethods.bind(controller));
+  router.get('/', controller.getAllShipMethods.bind(controller));
   router.get('/:id', controller.getShipMethodById.bind(controller));
   router.post('/', controller.createShipMethod.bind(controller));
   router.put('/:id', controller.updateShipMethod.bind(controller));
