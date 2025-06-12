@@ -2,11 +2,11 @@ import { PurchaseOrder } from '../entities/PurchaseOrder';
 import { PurchaseOrderDetail } from '../entities/PurchaseOrderDetail';
 
 export interface IPurchaseOrderRepository {
-  findAll(): Promise<PurchaseOrder[]>;
+  create(purchaseOrder: PurchaseOrder): Promise<PurchaseOrder>;
   findById(id: number): Promise<PurchaseOrder | null>;
-  findDetailById(id: number): Promise<PurchaseOrderDetail | null>;
-  findDetailsByPurchaseOrderId(purchaseOrderId: number): Promise<PurchaseOrderDetail[]>;
-  create(purchaseOrder: PurchaseOrder): Promise<void>;
+  findAll(): Promise<PurchaseOrder[]>;
+  update(purchaseOrder: PurchaseOrder): Promise<PurchaseOrder>;
+  delete(id: number): Promise<void>;
   createDetail(detail: {
     purchaseOrderId: number;
     dueDate: Date;
@@ -26,8 +26,7 @@ export interface IPurchaseOrderRepository {
     rejectedQty: number;
     modifiedDate: Date;
   }>;
-  update(purchaseOrder: PurchaseOrder): Promise<void>;
-  updateDetail(purchaseOrderDetail: PurchaseOrderDetail): Promise<void>;
-  delete(id: number): Promise<void>;
+  findDetailsByPurchaseOrderId(purchaseOrderId: number): Promise<PurchaseOrderDetail[]>;
+  updateDetail(detail: PurchaseOrderDetail): Promise<PurchaseOrderDetail>;
   deleteDetail(id: number): Promise<void>;
 } 

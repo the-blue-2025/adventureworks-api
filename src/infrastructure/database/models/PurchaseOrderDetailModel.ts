@@ -1,6 +1,19 @@
-import { Model, DataTypes, InferAttributes, InferCreationAttributes, CreationOptional, ForeignKey } from 'sequelize';
+import { Model, DataTypes, InferAttributes, InferCreationAttributes, CreationOptional, ForeignKey, QueryOptions } from 'sequelize';
 import sequelize from '../config';
 import { PurchaseOrder, PurchaseOrderInstance } from './PurchaseOrderModel';
+
+// Add custom query interface
+const customQueryInterface = sequelize.getQueryInterface();
+const originalInsert = customQueryInterface.insert;
+customQueryInterface.insert = function(
+  instance: Model<any, any> | null,
+  tableName: string,
+  values: object,
+  options?: QueryOptions
+) {
+  const newOptions = { ...options, returning: false };
+  return originalInsert.call(this, instance, tableName, values, newOptions);
+};
 
 export interface PurchaseOrderDetailInstance extends Model<
   InferAttributes<PurchaseOrderDetailInstance>,
@@ -12,10 +25,10 @@ export interface PurchaseOrderDetailInstance extends Model<
   orderQty: number;
   productId: number;
   unitPrice: number;
-  lineTotal: number;
+  lineTotal?: number;
   receivedQty: number;
   rejectedQty: number;
-  stockedQty: number;
+  stockedQty?: number;
   modifiedDate: Date;
   purchaseOrder?: PurchaseOrderInstance;
 }
@@ -27,51 +40,54 @@ export const PurchaseOrderDetail = sequelize.define<PurchaseOrderDetailInstance>
       type: DataTypes.INTEGER,
       primaryKey: true,
       field: 'PurchaseOrderDetailID',
-      autoIncrement: true
+      autoIncrement: true,
+      allowNull: false
     },
     purchaseOrderId: {
       type: DataTypes.INTEGER,
       field: 'PurchaseOrderID',
+      allowNull: false,
       references: {
         model: 'PurchaseOrder',
         key: 'PurchaseOrderID'
       }
     },
     dueDate: {
-      type: DataTypes.DATE,
-      field: 'DueDate'
+      type: DataTypes.DATEONLY,
+      field: 'DueDate',
+      allowNull: false
     },
     orderQty: {
       type: DataTypes.SMALLINT,
-      field: 'OrderQty'
+      field: 'OrderQty',
+      allowNull: false
     },
     productId: {
       type: DataTypes.INTEGER,
-      field: 'ProductID'
+      field: 'ProductID',
+      allowNull: false
     },
     unitPrice: {
       type: DataTypes.DECIMAL(19, 4),
-      field: 'UnitPrice'
-    },
-    lineTotal: {
-      type: DataTypes.DECIMAL(19, 4),
-      field: 'LineTotal'
+      field: 'UnitPrice',
+      allowNull: false
     },
     receivedQty: {
       type: DataTypes.DECIMAL(8, 2),
-      field: 'ReceivedQty'
+      field: 'ReceivedQty',
+      allowNull: false,
+      defaultValue: 0
     },
     rejectedQty: {
       type: DataTypes.DECIMAL(8, 2),
-      field: 'RejectedQty'
-    },
-    stockedQty: {
-      type: DataTypes.DECIMAL(9, 2),
-      field: 'StockedQty'
+      field: 'RejectedQty',
+      allowNull: false,
+      defaultValue: 0
     },
     modifiedDate: {
-      type: DataTypes.DATE,
-      field: 'ModifiedDate'
+      type: DataTypes.DATEONLY,
+      field: 'ModifiedDate',
+      allowNull: false
     }
   },
   {

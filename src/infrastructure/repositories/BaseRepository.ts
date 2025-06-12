@@ -61,9 +61,10 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
    * Create a new entity - Template Method implementation
    * @param entity - Domain entity to create
    */
-  async create(entity: TDomain): Promise<void> {
+  async create(entity: TDomain): Promise<TDomain> {
     try {
-      await this.model.create(this.toPersistence(entity));
+      const createdModel = await this.model.create(this.toPersistence(entity));
+      return this.toDomain(createdModel as TModel);
     } catch (error) {
       throw new RepositoryError(
         `Failed to create ${this.getEntityName()}`,
@@ -78,7 +79,7 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
    * Update an existing entity - Template Method implementation
    * @param entity - Domain entity to update
    */
-  async update(entity: TDomain): Promise<void> {
+  async update(entity: TDomain): Promise<TDomain> {
     try {
       const persistenceData = this.toPersistence(entity);
       const where = { [this.getIdField()]: persistenceData[this.getIdField()] } as WhereOptions<TModel>;
@@ -86,6 +87,17 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
         persistenceData,
         { where }
       );
+
+      const updatedModel = await this.model.findByPk(persistenceData[this.getIdField()]);
+      if (!updatedModel) {
+        throw new RepositoryError(
+          `Failed to fetch updated ${this.getEntityName()} with ID ${persistenceData[this.getIdField()]}`,
+          'update',
+          this.getEntityName()
+        );
+      }
+
+      return this.toDomain(updatedModel as TModel);
     } catch (error) {
       throw new RepositoryError(
         `Failed to update ${this.getEntityName()}`,

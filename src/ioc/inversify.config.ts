@@ -2,7 +2,7 @@ import { Container } from 'inversify';
 import { TYPES } from './types';
 
 // Repositories
-import { IPurchaseOrderRepository } from '../domain/repositories/IPurchaseOrderRepository';
+import { IPurchaseOrderRepository } from '../domain/interfaces/IPurchaseOrderRepository';
 import { IShipMethodRepository } from '../domain/repositories/IShipMethodRepository';
 import { IPersonRepository } from '../domain/repositories/IPersonRepository';
 import { IVendorRepository } from '../domain/repositories/IVendorRepository';

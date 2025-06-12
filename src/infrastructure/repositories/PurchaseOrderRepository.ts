@@ -9,9 +9,10 @@ import { Transaction, WhereOptions } from 'sequelize';
 import sequelize from '../database/config';
 import { BaseRepository } from './BaseRepository';
 import { RepositoryError } from '../../domain/errors/RepositoryError';
+import { IPurchaseOrderRepository as IPurchaseOrderRepositoryInterface } from '../../domain/interfaces/IPurchaseOrderRepository';
 
 @injectable()
-export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder, PurchaseOrderInstance, number> implements IPurchaseOrderRepository {
+export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder, PurchaseOrderInstance, number> implements IPurchaseOrderRepositoryInterface {
   protected readonly model = PurchaseOrder;
 
   protected getIdField(): string {
@@ -56,7 +57,7 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
   }
 
   // Override create to handle details in transaction
-  async create(purchaseOrder: DomainPurchaseOrder): Promise<void> {
+  async create(purchaseOrder: DomainPurchaseOrder): Promise<DomainPurchaseOrder> {
     const t = await sequelize.transaction();
     try {
       const createdPO = await this.model.create(this.toPersistence(purchaseOrder), { transaction: t });
@@ -70,6 +71,8 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
       }
       
       await t.commit();
+
+      return this.toDomain(createdPO);
     } catch (error) {
       await t.rollback();
       throw new RepositoryError(
@@ -82,7 +85,7 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
   }
 
   // Override update to handle details in transaction
-  async update(purchaseOrder: DomainPurchaseOrder): Promise<void> {
+  async update(purchaseOrder: DomainPurchaseOrder): Promise<DomainPurchaseOrder> {
     const t = await sequelize.transaction();
     try {
       const where = { purchaseOrderId: purchaseOrder.purchaseOrderId } as WhereOptions<PurchaseOrderInstance>;
@@ -106,6 +109,21 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
       }
 
       await t.commit();
+
+      // Fetch the updated purchase order with all its relationships
+      const updatedPO = await this.model.findByPk(purchaseOrder.purchaseOrderId, {
+        include: ['shipMethod', 'purchaseOrderDetails', 'employee', 'vendor']
+      });
+
+      if (!updatedPO) {
+        throw new RepositoryError(
+          `Failed to fetch updated purchase order with ID ${purchaseOrder.purchaseOrderId}`,
+          'update',
+          this.getEntityName()
+        );
+      }
+
+      return this.toDomain(updatedPO);
     } catch (error) {
       await t.rollback();
       throw new RepositoryError(
@@ -180,13 +198,31 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
     }
   }
 
-  async updateDetail(purchaseOrderDetail: DomainPurchaseOrderDetail): Promise<void> {
+  async updateDetail(purchaseOrderDetail: DomainPurchaseOrderDetail): Promise<DomainPurchaseOrderDetail> {
     try {
       const where = { purchaseOrderDetailId: purchaseOrderDetail.purchaseOrderDetailId } as WhereOptions<PurchaseOrderDetailInstance>;
       await PurchaseOrderDetail.update(
         this.toDetailPersistence(purchaseOrderDetail),
-        { where }
+        { 
+          where,
+          returning: false
+        }
       );
+
+      // Fetch the updated detail with its relationships
+      const updatedDetail = await PurchaseOrderDetail.findByPk(purchaseOrderDetail.purchaseOrderDetailId, {
+        include: ['purchaseOrder']
+      });
+
+      if (!updatedDetail) {
+        throw new RepositoryError(
+          `Failed to fetch updated purchase order detail with ID ${purchaseOrderDetail.purchaseOrderDetailId}`,
+          'updateDetail',
+          'PurchaseOrderDetail'
+        );
+      }
+
+      return this.toDetailDomain(updatedDetail);
     } catch (error) {
       throw new RepositoryError(
         `Failed to update purchase order detail with ID ${purchaseOrderDetail.purchaseOrderDetailId}`,
@@ -211,16 +247,82 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
     }
   }
 
-  async createDetail(purchaseOrderDetail: DomainPurchaseOrderDetail): Promise<void> {
+  async createDetail(detail: {
+    purchaseOrderId: number;
+    dueDate: Date;
+    orderQty: number;
+    productId: number;
+    unitPrice: number;
+    receivedQty?: number;
+    rejectedQty?: number;
+  }): Promise<{
+    purchaseOrderDetailId: number;
+    purchaseOrderId: number;
+    dueDate: Date;
+    orderQty: number;
+    productId: number;
+    unitPrice: number;
+    receivedQty: number;
+    rejectedQty: number;
+    modifiedDate: Date;
+  }> {
+    const t = await sequelize.transaction();
     try {
-      await PurchaseOrderDetail.create(this.toDetailPersistence(purchaseOrderDetail));
+      if (!detail.purchaseOrderId) {
+        throw new Error('PurchaseOrderId is required');
+      }
+
+      if (!detail.dueDate) {
+        throw new Error('DueDate is required');
+      }
+
+      const persistenceData = {
+        purchaseOrderId: detail.purchaseOrderId,
+        dueDate: detail.dueDate,
+        orderQty: detail.orderQty,
+        productId: detail.productId,
+        unitPrice: Number(detail.unitPrice.toFixed(4)),
+        receivedQty: Number((detail.receivedQty || 0).toFixed(2)),
+        rejectedQty: Number((detail.rejectedQty || 0).toFixed(2)),
+        modifiedDate: new Date()
+      };
+
+      // Create the record without using OUTPUT clause
+      await PurchaseOrderDetail.create(persistenceData, { transaction: t });
+
+      // Get the created record using a separate query
+      const createdDetail = await PurchaseOrderDetail.findOne({
+        where: {
+          purchaseOrderId: detail.purchaseOrderId,
+          productId: detail.productId,
+          orderQty: detail.orderQty,
+          unitPrice: persistenceData.unitPrice
+        },
+        order: [['modifiedDate', 'DESC']],
+        transaction: t
+      });
+
+      if (!createdDetail) {
+        throw new Error('Failed to retrieve created purchase order detail');
+      }
+
+      await t.commit();
+
+      return {
+        purchaseOrderDetailId: createdDetail.purchaseOrderDetailId,
+        purchaseOrderId: createdDetail.purchaseOrderId,
+        dueDate: createdDetail.dueDate,
+        orderQty: createdDetail.orderQty,
+        productId: createdDetail.productId,
+        unitPrice: Number(createdDetail.unitPrice),
+        receivedQty: Number(createdDetail.receivedQty),
+        rejectedQty: Number(createdDetail.rejectedQty),
+        modifiedDate: createdDetail.modifiedDate
+      };
     } catch (error) {
-      throw new RepositoryError(
-        `Failed to create purchase order detail for purchase order ID ${purchaseOrderDetail.purchaseOrderId}`,
-        'createDetail',
-        'PurchaseOrderDetail',
-        error instanceof Error ? error : undefined
-      );
+      await t.rollback();
+      console.error('Error creating purchase order detail:', error);
+      throw error;
     }
   }
 
@@ -257,10 +359,10 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
           orderQty: detail.orderQty,
           productId: detail.productId,
           unitPrice: detail.unitPrice,
-          lineTotal: detail.lineTotal,
+          lineTotal: detail.lineTotal ?? detail.orderQty * detail.unitPrice,
           receivedQty: detail.receivedQty,
           rejectedQty: detail.rejectedQty,
-          stockedQty: detail.stockedQty,
+          stockedQty: detail.stockedQty ?? detail.receivedQty - detail.rejectedQty,
           modifiedDate: detail.modifiedDate
         })
       );
@@ -287,19 +389,20 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
   }
 
   protected toPersistence(domain: DomainPurchaseOrder): any {
+    const now = new Date();
     return {
       purchaseOrderId: domain.purchaseOrderId,
       status: domain.status,
       employeeId: domain.employeeId,
       vendorId: domain.vendorId,
       shipMethodId: domain.shipMethod?.shipMethodId,
-      orderDate: domain.orderDate,
-      shipDate: domain.shipDate,
+      orderDate: domain.orderDate ? new Date(domain.orderDate) : null,
+      shipDate: domain.shipDate ? new Date(domain.shipDate) : null,
       subTotal: domain.subTotal,
       taxAmt: domain.taxAmt,
       freight: domain.freight,
       totalDue: domain.totalDue,
-      modifiedDate: domain.modifiedDate
+      modifiedDate: now
     };
   }
 
@@ -311,27 +414,27 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
       orderQty: model.orderQty,
       productId: model.productId,
       unitPrice: model.unitPrice,
-      lineTotal: model.lineTotal,
+      lineTotal: model.lineTotal ?? model.orderQty * model.unitPrice,
       receivedQty: model.receivedQty,
       rejectedQty: model.rejectedQty,
-      stockedQty: model.stockedQty,
+      stockedQty: model.stockedQty ?? model.receivedQty - model.rejectedQty,
       modifiedDate: model.modifiedDate
     });
   }
 
   private toDetailPersistence(domain: DomainPurchaseOrderDetail): any {
+    const { lineTotal, stockedQty, ...rest } = domain;
+    const now = new Date();
     return {
-      purchaseOrderDetailId: domain.purchaseOrderDetailId,
       purchaseOrderId: domain.purchaseOrderId,
-      dueDate: domain.dueDate,
+      purchaseOrderDetailId: domain.purchaseOrderDetailId,
+      dueDate: domain.dueDate ? new Date(domain.dueDate) : null,
       orderQty: domain.orderQty,
       productId: domain.productId,
       unitPrice: domain.unitPrice,
-      lineTotal: domain.lineTotal,
       receivedQty: domain.receivedQty,
       rejectedQty: domain.rejectedQty,
-      stockedQty: domain.stockedQty,
-      modifiedDate: domain.modifiedDate
+      modifiedDate: now
     };
   }
 } 

@@ -40,8 +40,32 @@ export class PurchaseOrderDetailService {
       modifiedDate: new Date()
     });
 
-    await this.purchaseOrderRepository.createDetail(detail);
-    return this.toDto(detail);
+    const createdDetail = await this.purchaseOrderRepository.createDetail({
+      purchaseOrderId: dto.purchaseOrderId,
+      dueDate: dto.dueDate,
+      orderQty: dto.orderQty,
+      productId: dto.productId,
+      unitPrice: dto.unitPrice,
+      receivedQty: dto.receivedQty ?? 0,
+      rejectedQty: dto.rejectedQty ?? 0
+    });
+
+    // Convert the repository response to a domain entity
+    const domainDetail = PurchaseOrderDetail.create({
+      purchaseOrderDetailId: createdDetail.purchaseOrderDetailId,
+      purchaseOrderId: createdDetail.purchaseOrderId,
+      dueDate: createdDetail.dueDate,
+      orderQty: createdDetail.orderQty,
+      productId: createdDetail.productId,
+      unitPrice: createdDetail.unitPrice,
+      lineTotal: createdDetail.orderQty * createdDetail.unitPrice,
+      receivedQty: createdDetail.receivedQty,
+      rejectedQty: createdDetail.rejectedQty,
+      stockedQty: createdDetail.receivedQty - createdDetail.rejectedQty,
+      modifiedDate: createdDetail.modifiedDate
+    });
+
+    return this.toDto(domainDetail);
   }
 
   async findById(id: number): Promise<PurchaseOrderDetailDto | null> {

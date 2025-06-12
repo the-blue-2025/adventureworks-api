@@ -11,7 +11,7 @@ export interface PurchaseOrderDetailProps {
   lineTotal: number;
   receivedQty: number;
   rejectedQty: number;
-  stockedQty: number;
+  stockedQty?: number;
   modifiedDate: Date;
   purchaseOrder?: PurchaseOrder;
 }
@@ -53,7 +53,7 @@ export class PurchaseOrderDetail extends Entity<PurchaseOrderDetailProps> {
     return this.props.rejectedQty;
   }
 
-  get stockedQty(): number {
+  get stockedQty(): number | undefined {
     return this.props.stockedQty;
   }
 

@@ -8,7 +8,7 @@ export interface PurchaseOrderDetailDto {
   lineTotal: number;
   receivedQty: number;
   rejectedQty: number;
-  stockedQty: number;
+  stockedQty?: number;
 }
 
 export interface CreatePurchaseOrderDetailDto {
