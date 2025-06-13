@@ -43,4 +43,17 @@ export const ShipMethod = sequelize.define<ShipMethodInstance>(
     schema: 'Purchasing',
     timestamps: false
   }
-); 
+);
+
+// Override the create method
+ShipMethod.create = async function<M extends Model, O extends any>(
+  values?: any,
+  options?: O
+) {
+  if (values) {
+    // Remove shipMethodId if it exists in the input
+    const { shipMethodId, ...cleanValues } = values;   
+    return await (this as any).__proto__.create.call(this, cleanValues, options);
+  } 
+  return await (this as any).__proto__.create.call(this, values, options);
+}; 

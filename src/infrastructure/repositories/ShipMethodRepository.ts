@@ -32,7 +32,7 @@ export class ShipMethodRepository extends BaseRepository<DomainShipMethod, ShipM
       name: domain.name,
       shipBase: domain.shipBase,
       shipRate: domain.shipRate,
-      modifiedDate: domain.modifiedDate
+      //modifiedDate: domain.modifiedDate
     };
   }
 } 

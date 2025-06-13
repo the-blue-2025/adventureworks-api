@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../ioc/types';
 import { IShipMethodRepository } from '../../domain/repositories/IShipMethodRepository';
-import { ShipMethod } from '../../domain/entities/ShipMethod';
+import { ShipMethod, ShipMethodProps } from '../../domain/entities/ShipMethod';
 import { CreateShipMethodDto, ShipMethodDto, UpdateShipMethodDto } from '../dtos/ShipMethodDto';
 
 @injectable()
@@ -22,13 +22,13 @@ export class ShipMethodService {
   }
 
   async create(dto: CreateShipMethodDto): Promise<ShipMethodDto> {
-    const shipMethod = ShipMethod.create({
-      ...dto,
-      shipMethodId: 0, // Will be set by database
-      modifiedDate: new Date()
-    });
-
-    await this.shipMethodRepository.create(shipMethod);
+    const shipMethod = await this.shipMethodRepository.create(
+      ShipMethod.create({
+        shipMethodId: -1, // Temporary value, will be replaced by database
+        ...dto,
+        modifiedDate: new Date()
+      })
+    );
     return this.toDto(shipMethod);
   }
 

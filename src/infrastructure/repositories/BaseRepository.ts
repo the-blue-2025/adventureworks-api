@@ -67,6 +67,7 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
       const createdModel = await this.model.create(this.toPersistence(entity));
       return this.toDomain(createdModel as TModel);
     } catch (error) {
+      console.log(error);
       throw new RepositoryError(
         `Failed to create ${this.getEntityName()}`,
         'create',
