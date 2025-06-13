@@ -2,19 +2,6 @@ import { Model, DataTypes, InferAttributes, InferCreationAttributes, CreationOpt
 import sequelize from '../config';
 import { PurchaseOrder, PurchaseOrderInstance } from './PurchaseOrderModel';
 
-// Add custom query interface
-const customQueryInterface = sequelize.getQueryInterface();
-const originalInsert = customQueryInterface.insert;
-customQueryInterface.insert = function(
-  instance: Model<any, any> | null,
-  tableName: string,
-  values: object,
-  options?: QueryOptions
-) {
-  const newOptions = { ...options, returning: false };
-  return originalInsert.call(this, instance, tableName, values, newOptions);
-};
-
 export interface PurchaseOrderDetailInstance extends Model<
   InferAttributes<PurchaseOrderDetailInstance>,
   InferCreationAttributes<PurchaseOrderDetailInstance>
@@ -93,6 +80,7 @@ export const PurchaseOrderDetail = sequelize.define<PurchaseOrderDetailInstance>
   {
     tableName: 'PurchaseOrderDetail',
     schema: 'Purchasing',
-    timestamps: false
+    timestamps: false,
+    modelName: 'PurchaseOrderDetail'
   }
 ); 

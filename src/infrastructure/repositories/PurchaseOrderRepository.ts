@@ -5,7 +5,7 @@ import { PurchaseOrderDetail as DomainPurchaseOrderDetail } from '../../domain/e
 import { PurchaseOrder, PurchaseOrderInstance } from '../database/models/PurchaseOrderModel';
 import { PurchaseOrderDetail, PurchaseOrderDetailInstance } from '../database/models/PurchaseOrderDetailModel';
 import { ShipMethod as DomainShipMethod } from '../../domain/entities/ShipMethod';
-import { Transaction, WhereOptions } from 'sequelize';
+import { Transaction, WhereOptions, QueryTypes } from 'sequelize';
 import sequelize from '../database/config';
 import { BaseRepository } from './BaseRepository';
 import { RepositoryError } from '../../domain/errors/RepositoryError';
@@ -166,7 +166,9 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
   // Additional methods specific to PurchaseOrder
   async findDetailById(id: number): Promise<DomainPurchaseOrderDetail | null> {
     try {
-      const detail = await PurchaseOrderDetail.findByPk(id, {
+      const where = { purchaseOrderDetailId: id } as WhereOptions<PurchaseOrderDetailInstance>;
+      const detail = await PurchaseOrderDetail.findOne({
+        where,
         include: ['purchaseOrder']
       });
       return detail ? this.toDetailDomain(detail) : null;
@@ -199,19 +201,21 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
   }
 
   async updateDetail(purchaseOrderDetail: DomainPurchaseOrderDetail): Promise<DomainPurchaseOrderDetail> {
+    const t = await sequelize.transaction();
     try {
       const where = { purchaseOrderDetailId: purchaseOrderDetail.purchaseOrderDetailId } as WhereOptions<PurchaseOrderDetailInstance>;
       await PurchaseOrderDetail.update(
         this.toDetailPersistence(purchaseOrderDetail),
         { 
           where,
-          returning: false
+          transaction: t
         }
       );
 
       // Fetch the updated detail with its relationships
       const updatedDetail = await PurchaseOrderDetail.findByPk(purchaseOrderDetail.purchaseOrderDetailId, {
-        include: ['purchaseOrder']
+        include: ['purchaseOrder'],
+        transaction: t
       });
 
       if (!updatedDetail) {
@@ -222,8 +226,10 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
         );
       }
 
+      await t.commit();
       return this.toDetailDomain(updatedDetail);
     } catch (error) {
+      await t.rollback();
       throw new RepositoryError(
         `Failed to update purchase order detail with ID ${purchaseOrderDetail.purchaseOrderDetailId}`,
         'updateDetail',
@@ -276,7 +282,18 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
         throw new Error('DueDate is required');
       }
 
+      // Get the next ID
+      const [result] = await sequelize.query(
+        'SELECT NEXT VALUE FOR Purchasing.PurchaseOrderDetailID_seq AS nextId',
+        { 
+          type: QueryTypes.SELECT,
+          transaction: t
+        }
+      );
+      const nextId = (result as any).nextId;
+
       const persistenceData = {
+        purchaseOrderDetailId: nextId,
         purchaseOrderId: detail.purchaseOrderId,
         dueDate: detail.dueDate,
         orderQty: detail.orderQty,
@@ -287,23 +304,13 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
         modifiedDate: new Date()
       };
 
-      // Create the record without using OUTPUT clause
-      await PurchaseOrderDetail.create(persistenceData, { transaction: t });
-
-      // Get the created record using a separate query
-      const createdDetail = await PurchaseOrderDetail.findOne({
-        where: {
-          purchaseOrderId: detail.purchaseOrderId,
-          productId: detail.productId,
-          orderQty: detail.orderQty,
-          unitPrice: persistenceData.unitPrice
-        },
-        order: [['modifiedDate', 'DESC']],
+      // Create the record with the pre-generated ID
+      const createdDetail = await PurchaseOrderDetail.create(persistenceData, { 
         transaction: t
       });
 
       if (!createdDetail) {
-        throw new Error('Failed to retrieve created purchase order detail');
+        throw new Error('Failed to create purchase order detail');
       }
 
       await t.commit();
@@ -321,8 +328,12 @@ export class PurchaseOrderRepository extends BaseRepository<DomainPurchaseOrder,
       };
     } catch (error) {
       await t.rollback();
-      console.error('Error creating purchase order detail:', error);
-      throw error;
+      throw new RepositoryError(
+        `Failed to create purchase order detail`,
+        'createDetail',
+        'PurchaseOrderDetail',
+        error instanceof Error ? error : undefined
+      );
     }
   }
 

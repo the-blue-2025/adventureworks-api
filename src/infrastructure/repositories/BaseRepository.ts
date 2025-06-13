@@ -45,7 +45,8 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
    */
   async findById(id: TId): Promise<TDomain | null> {
     try {
-      const model = await this.model.findByPk(id);
+      const where = { [this.getIdField()]: id } as WhereOptions<TModel>;
+      const model = await this.model.findOne({ where });
       return model ? this.toDomain(model as TModel) : null;
     } catch (error) {
       throw new RepositoryError(
@@ -88,7 +89,7 @@ export abstract class BaseRepository<TDomain, TModel extends Model, TId extends 
         { where }
       );
 
-      const updatedModel = await this.model.findByPk(persistenceData[this.getIdField()]);
+      const updatedModel = await this.model.findOne({ where });
       if (!updatedModel) {
         throw new RepositoryError(
           `Failed to fetch updated ${this.getEntityName()} with ID ${persistenceData[this.getIdField()]}`,
