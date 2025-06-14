@@ -30,7 +30,7 @@ export class VendorService {
       preferredVendorStatus: dto.preferredVendorStatus ?? true,
       activeFlag: dto.activeFlag ?? true,
       purchasingWebServiceURL: dto.purchasingWebServiceURL || null,
-      modifiedDate: new Date()
+      modifiedDate: new Date(2020, 5, 13) // Month is 0-based, so 5 = June
     });
 
     await this.vendorRepository.create(vendor);

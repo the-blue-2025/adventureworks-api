@@ -38,7 +38,7 @@ export class VendorRepository extends BaseRepository<DomainVendor, VendorInstanc
       preferredVendorStatus: domain.preferredVendorStatus,
       activeFlag: domain.activeFlag,
       purchasingWebServiceURL: domain.purchasingWebServiceURL,
-      modifiedDate: domain.modifiedDate
+      modifiedDate: new Date()
     };
   }
 } 

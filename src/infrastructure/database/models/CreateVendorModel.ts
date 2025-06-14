@@ -1,6 +1,5 @@
 import { Model, DataTypes, InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
 import sequelize from '../config';
-import { CreateVendor } from './CreateVendorModel';
 
 export interface VendorInstance extends Model<
   InferAttributes<VendorInstance>,
@@ -13,10 +12,10 @@ export interface VendorInstance extends Model<
   preferredVendorStatus: boolean;
   activeFlag: boolean;
   purchasingWebServiceURL: string | null;
-  modifiedDate: Date;
+
 }
 
-export const Vendor = sequelize.define<VendorInstance>(
+export const CreateVendor = sequelize.define<VendorInstance>(
   'Vendor',
   {
     businessEntityId: {
@@ -57,11 +56,6 @@ export const Vendor = sequelize.define<VendorInstance>(
       field: 'PurchasingWebServiceURL',
       allowNull: true
     },
-    modifiedDate: {
-      type: DataTypes.DATE,
-      field: 'ModifiedDate',
-      allowNull: false
-    }
   },
   {
     tableName: 'Vendor',
@@ -69,13 +63,3 @@ export const Vendor = sequelize.define<VendorInstance>(
     timestamps: false
   }
 ); 
-
-// Override the create method
-const originalCreate = Vendor.create;
-Vendor.create = async function(values?: any, options?: any) {
-  if (values) {
-    const { businessEntityId, ...cleanValues } = values;
-    return await CreateVendor.create(cleanValues, options);
-  }
-  return await CreateVendor.create(values, options);
-} as typeof originalCreate; 
