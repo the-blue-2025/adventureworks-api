@@ -6,13 +6,16 @@ import { PurchaseOrderDetail } from '../../domain/entities/PurchaseOrderDetail';
 import { CreatePurchaseOrderDto, PurchaseOrderDto, UpdatePurchaseOrderDto } from '../dtos/PurchaseOrderDto';
 import { ShipMethodDto } from '../dtos/ShipMethodDto';
 import { PurchaseOrderDetailDto } from '../dtos/PurchaseOrderDetailDto';
+import { BaseApplicationService } from './BaseApplicationService';
 
 @injectable()
-export class PurchaseOrderService {
+export class PurchaseOrderService extends BaseApplicationService<PurchaseOrder, PurchaseOrderDto, CreatePurchaseOrderDto, UpdatePurchaseOrderDto> {
   constructor(
     @inject(TYPES.IPurchaseOrderRepository)
     private purchaseOrderRepository: IPurchaseOrderRepository
-  ) {}
+  ) {
+    super();
+  }
 
   async findAll(): Promise<PurchaseOrderDto[]> {
     const purchaseOrders = await this.purchaseOrderRepository.findAll();
@@ -25,29 +28,7 @@ export class PurchaseOrderService {
   }
 
   async create(dto: CreatePurchaseOrderDto): Promise<PurchaseOrderDto> {
-    const purchaseOrderDetails = dto.purchaseOrderDetails?.map(detail =>
-      PurchaseOrderDetail.createNew({
-        purchaseOrderId: 0, // Will be set by database
-        dueDate: detail.dueDate,
-        orderQty: detail.orderQty,
-        productId: detail.productId,
-        unitPrice: detail.unitPrice,
-        receivedQty: detail.receivedQty || 0,
-        rejectedQty: detail.rejectedQty || 0,
-        stockedQty: detail.stockedQty || 0,
-        modifiedDate: new Date()
-      })
-    );
-
-    const purchaseOrder = PurchaseOrder.create({
-      ...dto,
-      purchaseOrderId: 0, // Will be set by database
-      totalDue: this.calculateTotalDue(dto.subTotal, dto.taxAmt, dto.freight),
-      modifiedDate: new Date(),
-      shipDate: dto.shipDate || null,
-      purchaseOrderDetails
-    });
-
+    const purchaseOrder = this.toEntity(dto);
     await this.purchaseOrderRepository.create(purchaseOrder);
     return this.toDto(purchaseOrder);
   }
@@ -58,38 +39,7 @@ export class PurchaseOrderService {
       return null;
     }
 
-    const purchaseOrderDetails = dto.purchaseOrderDetails?.map(detail =>
-      PurchaseOrderDetail.createNew({
-        purchaseOrderId: id,
-        dueDate: detail.dueDate,
-        orderQty: detail.orderQty,
-        productId: detail.productId,
-        unitPrice: detail.unitPrice,
-        receivedQty: detail.receivedQty || 0,
-        rejectedQty: detail.rejectedQty || 0,
-        stockedQty: detail.stockedQty || 0,
-        modifiedDate: new Date()
-      })
-    );
-
-    const updatedPurchaseOrder = PurchaseOrder.create({
-      purchaseOrderId: id,
-      status: dto.status ?? existingPurchaseOrder.status,
-      vendorId: dto.vendorId ?? existingPurchaseOrder.vendorId,
-      orderDate: dto.orderDate ?? existingPurchaseOrder.orderDate,
-      shipDate: dto.shipDate ?? existingPurchaseOrder.shipDate,
-      subTotal: dto.subTotal ?? existingPurchaseOrder.subTotal,
-      taxAmt: dto.taxAmt ?? existingPurchaseOrder.taxAmt,
-      freight: dto.freight ?? existingPurchaseOrder.freight,
-      totalDue: this.calculateTotalDue(
-        dto.subTotal ?? existingPurchaseOrder.subTotal,
-        dto.taxAmt ?? existingPurchaseOrder.taxAmt,
-        dto.freight ?? existingPurchaseOrder.freight
-      ),
-      modifiedDate: new Date(),
-      purchaseOrderDetails: purchaseOrderDetails || existingPurchaseOrder.purchaseOrderDetails
-    });
-
+    const updatedPurchaseOrder = this.toEntity({ ...dto, purchaseOrderId: id } as CreatePurchaseOrderDto);
     await this.purchaseOrderRepository.update(updatedPurchaseOrder);
     return this.toDto(updatedPurchaseOrder);
   }
@@ -98,7 +48,7 @@ export class PurchaseOrderService {
     await this.purchaseOrderRepository.delete(id);
   }
 
-  private toDto(purchaseOrder: PurchaseOrder): PurchaseOrderDto {
+  protected toDto(purchaseOrder: PurchaseOrder): PurchaseOrderDto {
     const dto: PurchaseOrderDto = {
       purchaseOrderId: purchaseOrder.purchaseOrderId,
       status: purchaseOrder.status,
@@ -153,6 +103,42 @@ export class PurchaseOrderService {
     }
 
     return dto;
+  }
+
+  protected toEntity(dto: CreatePurchaseOrderDto | UpdatePurchaseOrderDto): PurchaseOrder {
+    const purchaseOrderDetails = dto.purchaseOrderDetails?.map(detail =>
+      PurchaseOrderDetail.createNew({
+        purchaseOrderId: 'purchaseOrderId' in dto ? (dto as any).purchaseOrderId : 0,
+        dueDate: detail.dueDate,
+        orderQty: detail.orderQty,
+        productId: detail.productId,
+        unitPrice: detail.unitPrice,
+        receivedQty: detail.receivedQty || 0,
+        rejectedQty: detail.rejectedQty || 0,
+        stockedQty: detail.stockedQty || 0,
+        modifiedDate: new Date()
+      })
+    );
+
+    const baseDto = {
+      purchaseOrderId: 'purchaseOrderId' in dto ? (dto as any).purchaseOrderId : 0,
+      status: dto.status || 1, // Default status
+      vendorId: dto.vendorId,
+      orderDate: dto.orderDate || new Date(),
+      shipDate: dto.shipDate || null,
+      subTotal: dto.subTotal || 0,
+      taxAmt: dto.taxAmt || 0,
+      freight: dto.freight || 0,
+      totalDue: this.calculateTotalDue(
+        dto.subTotal || 0,
+        dto.taxAmt || 0,
+        dto.freight || 0
+      ),
+      modifiedDate: new Date(),
+      purchaseOrderDetails
+    };
+
+    return PurchaseOrder.create(baseDto);
   }
 
   private calculateTotalDue(subTotal: number, taxAmt: number, freight: number): number {

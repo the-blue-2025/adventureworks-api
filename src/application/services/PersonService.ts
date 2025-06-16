@@ -3,13 +3,16 @@ import { TYPES } from '../../ioc/types';
 import { IPersonRepository } from '../../domain/repositories/IPersonRepository';
 import { Person } from '../../domain/entities/Person';
 import { PersonDto, CreatePersonDto, UpdatePersonDto } from '../dtos/PersonDto';
+import { BaseApplicationService } from './BaseApplicationService';
 
 @injectable()
-export class PersonService {
+export class PersonService extends BaseApplicationService<Person, PersonDto, CreatePersonDto, UpdatePersonDto> {
   constructor(
     @inject(TYPES.IPersonRepository)
     private personRepository: IPersonRepository
-  ) {}
+  ) {
+    super();
+  }
 
   async findAll(): Promise<PersonDto[]> {
     const persons = await this.personRepository.findAll();
@@ -22,19 +25,7 @@ export class PersonService {
   }
 
   async create(dto: CreatePersonDto): Promise<PersonDto> {
-    const person = Person.create({
-      businessEntityId: 0, // Will be set by database
-      personType: dto.personType,
-      nameStyle: dto.nameStyle || false,
-      title: dto.title || null,
-      firstName: dto.firstName,
-      middleName: dto.middleName || null,
-      lastName: dto.lastName,
-      suffix: dto.suffix || null,
-      emailPromotion: dto.emailPromotion || 0,
-      modifiedDate: new Date()
-    });
-
+    const person = this.toEntity(dto);
     await this.personRepository.create(person);
     return this.toDto(person);
   }
@@ -45,19 +36,7 @@ export class PersonService {
       return null;
     }
 
-    const updatedPerson = Person.create({
-      businessEntityId: existingPerson.businessEntityId,
-      personType: dto.personType || existingPerson.personType,
-      nameStyle: dto.nameStyle ?? existingPerson.nameStyle,
-      title: dto.title ?? existingPerson.title,
-      firstName: dto.firstName || existingPerson.firstName,
-      middleName: dto.middleName ?? existingPerson.middleName,
-      lastName: dto.lastName || existingPerson.lastName,
-      suffix: dto.suffix ?? existingPerson.suffix,
-      emailPromotion: dto.emailPromotion ?? existingPerson.emailPromotion,
-      modifiedDate: new Date()
-    });
-
+    const updatedPerson = this.toEntity({ ...dto, businessEntityId: id } as CreatePersonDto);
     await this.personRepository.update(updatedPerson);
     return this.toDto(updatedPerson);
   }
@@ -66,7 +45,7 @@ export class PersonService {
     await this.personRepository.delete(id);
   }
 
-  private toDto(person: Person): PersonDto {
+  protected toDto(person: Person): PersonDto {
     return {
       businessEntityId: person.businessEntityId,
       personType: person.personType,
@@ -79,5 +58,22 @@ export class PersonService {
       emailPromotion: person.emailPromotion,
       modifiedDate: person.modifiedDate
     };
+  }
+
+  protected toEntity(dto: CreatePersonDto | UpdatePersonDto): Person {
+    const baseDto = {
+      businessEntityId: 'businessEntityId' in dto ? (dto as any).businessEntityId : 0,
+      personType: dto.personType,
+      nameStyle: dto.nameStyle || false,
+      title: dto.title || null,
+      firstName: dto.firstName,
+      middleName: dto.middleName || null,
+      lastName: dto.lastName,
+      suffix: dto.suffix || null,
+      emailPromotion: dto.emailPromotion || 0,
+      modifiedDate: new Date()
+    };
+
+    return Person.create(baseDto);
   }
 } 

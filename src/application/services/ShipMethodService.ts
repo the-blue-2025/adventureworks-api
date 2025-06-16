@@ -1,19 +1,22 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../ioc/types';
 import { IShipMethodRepository } from '../../domain/repositories/IShipMethodRepository';
-import { ShipMethod, ShipMethodProps } from '../../domain/entities/ShipMethod';
-import { CreateShipMethodDto, ShipMethodDto, UpdateShipMethodDto } from '../dtos/ShipMethodDto';
+import { ShipMethod } from '../../domain/entities/ShipMethod';
+import { ShipMethodDto, CreateShipMethodDto, UpdateShipMethodDto } from '../dtos/ShipMethodDto';
+import { BaseApplicationService } from './BaseApplicationService';
 
 @injectable()
-export class ShipMethodService {
+export class ShipMethodService extends BaseApplicationService<ShipMethod, ShipMethodDto, CreateShipMethodDto, UpdateShipMethodDto> {
   constructor(
     @inject(TYPES.IShipMethodRepository)
     private shipMethodRepository: IShipMethodRepository
-  ) {}
+  ) {
+    super();
+  }
 
   async findAll(): Promise<ShipMethodDto[]> {
     const shipMethods = await this.shipMethodRepository.findAll();
-    return shipMethods.map(sm => this.toDto(sm));
+    return shipMethods.map(shipMethod => this.toDto(shipMethod));
   }
 
   async findById(id: number): Promise<ShipMethodDto | null> {
@@ -22,13 +25,8 @@ export class ShipMethodService {
   }
 
   async create(dto: CreateShipMethodDto): Promise<ShipMethodDto> {
-    const shipMethod = await this.shipMethodRepository.create(
-      ShipMethod.create({
-        shipMethodId: -1, // Temporary value, will be replaced by database
-        ...dto,
-        modifiedDate: new Date()
-      })
-    );
+    const shipMethod = this.toEntity(dto);
+    await this.shipMethodRepository.create(shipMethod);
     return this.toDto(shipMethod);
   }
 
@@ -38,34 +36,33 @@ export class ShipMethodService {
       return null;
     }
 
-    const updatedShipMethod = ShipMethod.create({
-      shipMethodId: existingShipMethod.shipMethodId,
-      name: dto.name ?? existingShipMethod.name,
-      shipBase: dto.shipBase ?? existingShipMethod.shipBase,
-      shipRate: dto.shipRate ?? existingShipMethod.shipRate,
-      modifiedDate: new Date()
-    });
-
+    const updatedShipMethod = this.toEntity({ ...dto, shipMethodId: id } as CreateShipMethodDto);
     await this.shipMethodRepository.update(updatedShipMethod);
     return this.toDto(updatedShipMethod);
   }
 
-  async delete(id: number): Promise<boolean> {
-    const shipMethod = await this.shipMethodRepository.findById(id);
-    if (!shipMethod) {
-      return false;
-    }
-
+  async delete(id: number): Promise<void> {
     await this.shipMethodRepository.delete(id);
-    return true;
   }
 
-  private toDto(shipMethod: ShipMethod): ShipMethodDto {
+  protected toDto(shipMethod: ShipMethod): ShipMethodDto {
     return {
       shipMethodId: shipMethod.shipMethodId,
       name: shipMethod.name,
       shipBase: shipMethod.shipBase,
       shipRate: shipMethod.shipRate
     };
+  }
+
+  protected toEntity(dto: CreateShipMethodDto | UpdateShipMethodDto): ShipMethod {
+    const baseDto = {
+      shipMethodId: 'shipMethodId' in dto ? (dto as any).shipMethodId : 0,
+      name: dto.name,
+      shipBase: dto.shipBase,
+      shipRate: dto.shipRate,
+      modifiedDate: new Date()
+    };
+
+    return ShipMethod.create(baseDto);
   }
 } 

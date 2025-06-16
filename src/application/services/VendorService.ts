@@ -3,13 +3,16 @@ import { TYPES } from '../../ioc/types';
 import { IVendorRepository } from '../../domain/repositories/IVendorRepository';
 import { Vendor } from '../../domain/entities/Vendor';
 import { VendorDto, CreateVendorDto, UpdateVendorDto } from '../dtos/VendorDto';
+import { BaseApplicationService } from './BaseApplicationService';
 
 @injectable()
-export class VendorService {
+export class VendorService extends BaseApplicationService<Vendor, VendorDto, CreateVendorDto, UpdateVendorDto> {
   constructor(
     @inject(TYPES.IVendorRepository)
     private vendorRepository: IVendorRepository
-  ) {}
+  ) {
+    super();
+  }
 
   async findAll(): Promise<VendorDto[]> {
     const vendors = await this.vendorRepository.findAll();
@@ -22,17 +25,7 @@ export class VendorService {
   }
 
   async create(dto: CreateVendorDto): Promise<VendorDto> {
-    const vendor = Vendor.create({
-      businessEntityId: 0, // Will be set by database
-      accountNumber: dto.accountNumber,
-      name: dto.name,
-      creditRating: dto.creditRating,
-      preferredVendorStatus: dto.preferredVendorStatus ?? true,
-      activeFlag: dto.activeFlag ?? true,
-      purchasingWebServiceURL: dto.purchasingWebServiceURL || null,
-      modifiedDate: new Date(2020, 5, 13) // Month is 0-based, so 5 = June
-    });
-
+    const vendor = this.toEntity(dto);
     await this.vendorRepository.create(vendor);
     return this.toDto(vendor);
   }
@@ -43,17 +36,7 @@ export class VendorService {
       return null;
     }
 
-    const updatedVendor = Vendor.create({
-      businessEntityId: existingVendor.businessEntityId,
-      accountNumber: dto.accountNumber || existingVendor.accountNumber,
-      name: dto.name || existingVendor.name,
-      creditRating: dto.creditRating ?? existingVendor.creditRating,
-      preferredVendorStatus: dto.preferredVendorStatus ?? existingVendor.preferredVendorStatus,
-      activeFlag: dto.activeFlag ?? existingVendor.activeFlag,
-      purchasingWebServiceURL: dto.purchasingWebServiceURL ?? existingVendor.purchasingWebServiceURL,
-      modifiedDate: new Date()
-    });
-
+    const updatedVendor = this.toEntity({ ...dto, businessEntityId: id } as CreateVendorDto);
     await this.vendorRepository.update(updatedVendor);
     return this.toDto(updatedVendor);
   }
@@ -62,7 +45,7 @@ export class VendorService {
     await this.vendorRepository.delete(id);
   }
 
-  private toDto(vendor: Vendor): VendorDto {
+  protected toDto(vendor: Vendor): VendorDto {
     return {
       businessEntityId: vendor.businessEntityId,
       accountNumber: vendor.accountNumber,
@@ -73,5 +56,24 @@ export class VendorService {
       purchasingWebServiceURL: vendor.purchasingWebServiceURL,
       modifiedDate: vendor.modifiedDate
     };
+  }
+
+  protected toEntity(dto: CreateVendorDto | UpdateVendorDto): Vendor {
+    if (!('accountNumber' in dto) || !('name' in dto) || !('creditRating' in dto)) {
+      throw new Error('Required properties missing: accountNumber, name, creditRating');
+    }
+
+    const baseDto = {
+      businessEntityId: 'businessEntityId' in dto ? (dto as any).businessEntityId : 0,
+      accountNumber: dto.accountNumber as string,
+      name: dto.name as string,
+      creditRating: dto.creditRating as number,
+      preferredVendorStatus: dto.preferredVendorStatus || false,
+      activeFlag: dto.activeFlag || true,
+      purchasingWebServiceURL: dto.purchasingWebServiceURL || null,
+      modifiedDate: new Date()
+    };
+
+    return Vendor.create(baseDto);
   }
 } 
