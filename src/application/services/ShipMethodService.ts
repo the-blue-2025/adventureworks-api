@@ -5,6 +5,15 @@ import { ShipMethod } from '../../domain/entities/ShipMethod';
 import { ShipMethodDto, CreateShipMethodDto, UpdateShipMethodDto } from '../dtos/ShipMethodDto';
 import { BaseApplicationService } from './BaseApplicationService';
 
+// type for update merge
+interface ShipMethodUpdateMerge {
+  shipMethodId: number;
+  name: string;
+  shipBase: number;
+  shipRate: number;
+  modifiedDate: Date;
+}
+
 @injectable()
 export class ShipMethodService extends BaseApplicationService<ShipMethod, ShipMethodDto, CreateShipMethodDto, UpdateShipMethodDto> {
   constructor(
@@ -31,14 +40,21 @@ export class ShipMethodService extends BaseApplicationService<ShipMethod, ShipMe
   }
 
   async update(id: number, dto: UpdateShipMethodDto): Promise<ShipMethodDto | null> {
-    const existingShipMethod = await this.shipMethodRepository.findById(id);
-    if (!existingShipMethod) {
-      return null;
-    }
+    const existing = await this.shipMethodRepository.findById(id);
+    if (!existing) return null;
 
-    const updatedShipMethod = this.toEntity({ ...dto, shipMethodId: id } as CreateShipMethodDto);
-    await this.shipMethodRepository.update(updatedShipMethod);
-    return this.toDto(updatedShipMethod);
+    // Merge existing entity with update DTO, prioritizing DTO values if provided
+    const merged: ShipMethodUpdateMerge = {
+      shipMethodId: id,
+      name: dto.name !== undefined ? dto.name : existing.name,
+      shipBase: dto.shipBase !== undefined ? dto.shipBase : existing.shipBase,
+      shipRate: dto.shipRate !== undefined ? dto.shipRate : existing.shipRate,
+      modifiedDate: new Date()
+    };
+
+    const updatedEntity = this.toEntity(merged);
+    await this.shipMethodRepository.update(updatedEntity);
+    return this.toDto(updatedEntity);
   }
 
   async delete(id: number): Promise<void> {
@@ -54,13 +70,13 @@ export class ShipMethodService extends BaseApplicationService<ShipMethod, ShipMe
     };
   }
 
-  protected toEntity(dto: CreateShipMethodDto | UpdateShipMethodDto): ShipMethod {
+  protected toEntity(dto: CreateShipMethodDto | ShipMethodUpdateMerge): ShipMethod {
     const baseDto = {
-      shipMethodId: 'shipMethodId' in dto ? (dto as any).shipMethodId : 0,
+      shipMethodId: (dto as any).shipMethodId ?? 0,
       name: dto.name,
       shipBase: dto.shipBase,
       shipRate: dto.shipRate,
-      modifiedDate: new Date()
+      modifiedDate: (dto as any).modifiedDate ?? new Date()
     };
 
     return ShipMethod.create(baseDto);
