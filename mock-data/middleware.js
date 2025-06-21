@@ -50,7 +50,7 @@ module.exports = (req, res, next) => {
         name: vendor.name,
         accountNumber: vendor.accountNumber
       } : undefined,
-      details: details
+      purchaseOrderDetails: details
     };
     
     console.log('Sending response with', details.length, 'details');
