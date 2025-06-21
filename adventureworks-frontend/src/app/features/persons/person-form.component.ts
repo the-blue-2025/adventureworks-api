@@ -18,7 +18,7 @@ import { PersonDto, CreatePersonDto, UpdatePersonDto } from '../../shared/models
         </div>
 
         <!-- Loading State -->
-        @if (personService.loading()) {
+        @if (personService.isLoading()) {
           <div class="loading">Saving person...</div>
         }
 
@@ -104,7 +104,7 @@ import { PersonDto, CreatePersonDto, UpdatePersonDto } from '../../shared/models
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary" [disabled]="personService.loading()">
+            <button type="submit" class="btn btn-primary" [disabled]="personService.isLoading()">
               {{ isEditMode ? 'Update' : 'Create' }} Person
             </button>
             <a routerLink="/persons" class="btn btn-secondary">Cancel</a>
@@ -202,8 +202,13 @@ export class PersonFormComponent implements OnInit {
     });
   }
 
-  loadPerson() {
-    this.personService.getPersonById(this.personId).subscribe(person => {
+  async loadPerson() {
+    try {
+      this.personService.selectPerson(this.personId);
+      // Wait a bit for the effect to load the data
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const person = this.personService.selectedPerson();
       if (person) {
         this.person = {
           personType: person.personType,
@@ -216,24 +221,29 @@ export class PersonFormComponent implements OnInit {
           emailPromotion: person.emailPromotion
         };
       }
-    });
+    } catch (error) {
+      console.error('Failed to load person:', error);
+    }
   }
 
-  onSubmit() {
-    if (this.isEditMode) {
-      this.personService.updatePerson(this.personId, this.person).subscribe(() => {
+  async onSubmit() {
+    try {
+      if (this.isEditMode) {
+        await this.personService.updatePerson(this.personId, this.person);
         this.successMessage = 'Person updated successfully!';
         setTimeout(() => {
           this.router.navigate(['/persons', this.personId]);
         }, 1500);
-      });
-    } else {
-      this.personService.createPerson(this.person).subscribe(() => {
+      } else {
+        await this.personService.createPerson(this.person);
         this.successMessage = 'Person created successfully!';
         setTimeout(() => {
           this.router.navigate(['/persons']);
         }, 1500);
-      });
+      }
+    } catch (error) {
+      console.error('Failed to save person:', error);
+      this.successMessage = 'Error saving person. Please try again.';
     }
   }
 } 

@@ -18,13 +18,13 @@ import { PurchaseOrderDto, CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from
         </div>
 
         <!-- Loading State -->
-        @if (purchaseOrderService.loading()) {
+        @if (purchaseOrderService.purchaseOrdersLoading()) {
           <div class="loading">Saving purchase order...</div>
         }
 
         <!-- Error State -->
-        @if (purchaseOrderService.error()) {
-          <div class="error">{{ purchaseOrderService.error() }}</div>
+        @if (purchaseOrderService.purchaseOrdersError()) {
+          <div class="error">{{ purchaseOrderService.purchaseOrdersError() }}</div>
         }
 
         <!-- Success Message -->
@@ -105,7 +105,7 @@ import { PurchaseOrderDto, CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary" [disabled]="purchaseOrderService.loading()">
+            <button type="submit" class="btn btn-primary" [disabled]="purchaseOrderService.isLoading()">
               {{ isEditMode ? 'Update' : 'Create' }} Purchase Order
             </button>
             <a routerLink="/purchase-orders" class="btn btn-secondary">Cancel</a>
@@ -199,8 +199,13 @@ export class PurchaseOrderFormComponent implements OnInit {
     });
   }
 
-  loadPurchaseOrder() {
-    this.purchaseOrderService.getPurchaseOrderById(this.orderId).subscribe(order => {
+  async loadPurchaseOrder() {
+    try {
+      this.purchaseOrderService.selectPurchaseOrder(this.orderId);
+      // Wait a bit for the effect to load the data
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const order = this.purchaseOrderService.selectedPurchaseOrder();
       if (order) {
         this.order = {
           status: order.status,
@@ -214,24 +219,29 @@ export class PurchaseOrderFormComponent implements OnInit {
           freight: order.freight
         };
       }
-    });
+    } catch (error) {
+      console.error('Failed to load purchase order:', error);
+    }
   }
 
-  onSubmit() {
-    if (this.isEditMode) {
-      this.purchaseOrderService.updatePurchaseOrder(this.orderId, this.order).subscribe(() => {
+  async onSubmit() {
+    try {
+      if (this.isEditMode) {
+        await this.purchaseOrderService.updatePurchaseOrder(this.orderId, this.order);
         this.successMessage = 'Purchase order updated successfully!';
         setTimeout(() => {
           this.router.navigate(['/purchase-orders', this.orderId]);
         }, 1500);
-      });
-    } else {
-      this.purchaseOrderService.createPurchaseOrder(this.order).subscribe(() => {
+      } else {
+        await this.purchaseOrderService.createPurchaseOrder(this.order);
         this.successMessage = 'Purchase order created successfully!';
         setTimeout(() => {
           this.router.navigate(['/purchase-orders']);
         }, 1500);
-      });
+      }
+    } catch (error) {
+      console.error('Failed to save purchase order:', error);
+      this.successMessage = 'Error saving purchase order. Please try again.';
     }
   }
 } 

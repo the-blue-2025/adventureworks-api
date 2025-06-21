@@ -20,7 +20,7 @@ import { PersonDto } from '../../shared/models/person.dto';
         </div>
 
         <!-- Loading State -->
-        @if (personService.loading()) {
+        @if (personService.isLoading()) {
           <div class="loading">Loading person details...</div>
         }
 
@@ -30,7 +30,7 @@ import { PersonDto } from '../../shared/models/person.dto';
         }
 
         <!-- Person Details -->
-        @if (personService.selectedItem()) {
+        @if (personService.selectedPerson()) {
           @if (person; as person) {
             <div class="person-details">
               <div class="row">
@@ -43,8 +43,8 @@ import { PersonDto } from '../../shared/models/person.dto';
                         <td>{{ person.businessEntityId }}</td>
                       </tr>
                       <tr>
-                        <th>Full Name:</th>
-                        <td>{{ personService.getFullName(person) }}</td>
+                        <th>Name:</th>
+                        <td>{{ getFullName(person) }}</td>
                       </tr>
                       <tr>
                         <th>Title:</th>
@@ -95,7 +95,7 @@ import { PersonDto } from '../../shared/models/person.dto';
               </div>
             </div>
           }
-        } @else if (!personService.loading()) {
+        } @else if (!personService.isLoading()) {
           <div class="text-center py-4">
             <p>Person not found.</p>
           </div>
@@ -170,10 +170,14 @@ export class PersonDetailComponent implements OnInit {
   }
 
   loadPerson() {
-    this.personService.getPersonById(this.personId).subscribe();
+    this.personService.selectPerson(this.personId);
   }
 
   get person(): PersonDto | null {
-    return this.personService.selectedItem();
+    return this.personService.selectedPerson();
+  }
+
+  getFullName(person: PersonDto): string {
+    return `${person.firstName || ''} ${person.lastName || ''}`.trim();
   }
 } 

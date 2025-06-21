@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PersonService } from '../../shared/services/person.service';
 import { PersonDto } from '../../shared/models/person.dto';
@@ -29,7 +29,7 @@ import { PersonDto } from '../../shared/models/person.dto';
         </div>
 
         <!-- Loading State -->
-        @if (personService.loading()) {
+        @if (personService.isLoading()) {
           <div class="loading">Loading persons...</div>
         }
 
@@ -44,36 +44,43 @@ import { PersonDto } from '../../shared/models/person.dto';
         }
 
         <!-- Persons Table -->
-        @if (personService.data().length > 0) {
-          <table class="table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Email Promotion</th>
-                <th>Modified Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (person of personService.data(); track person.businessEntityId) {
+        @if (personService.persons().length > 0) {
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
                 <tr>
-                  <td>{{ person.businessEntityId }}</td>
-                  <td>{{ personService.getFullName(person) }}</td>
-                  <td>{{ person.personType }}</td>
-                  <td>{{ person.emailPromotion }}</td>
-                  <td>{{ person.modifiedDate | date:'short' }}</td>
-                  <td>
-                    <a [routerLink]="['/persons', person.businessEntityId]" class="btn btn-secondary btn-sm">View</a>
-                    <a [routerLink]="['/persons', person.businessEntityId, 'edit']" class="btn btn-primary btn-sm">Edit</a>
-                    <button (click)="deletePerson(person)" class="btn btn-danger btn-sm">Delete</button>
-                  </td>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Email Promotion</th>
+                  <th>Modified Date</th>
+                  <th>Actions</th>
                 </tr>
-              }
-            </tbody>
-          </table>
-        } @else if (!personService.loading()) {
+              </thead>
+              <tbody>
+                @for (person of personService.persons(); track person.businessEntityId) {
+                  <tr>
+                    <td>{{ person.businessEntityId }}</td>
+                    <td 
+                      class="person-name" 
+                      (click)="viewPersonDetail(person.businessEntityId)"
+                      title="Click to view details">
+                      {{ getFullName(person) }}
+                    </td>
+                    <td>{{ person.personType }}</td>
+                    <td>{{ person.emailPromotion }}</td>
+                    <td>{{ person.modifiedDate | date:'short' }}</td>
+                    <td>
+                      <a [routerLink]="['/persons', person.businessEntityId]" class="btn btn-secondary btn-sm">View</a>
+                      <a [routerLink]="['/persons', person.businessEntityId, 'edit']" class="btn btn-primary btn-sm">Edit</a>
+                      <button (click)="deletePerson(person)" class="btn btn-danger btn-sm">Delete</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else if (!personService.isLoading()) {
           <div class="text-center py-4">
             <p>No persons found.</p>
           </div>
@@ -130,45 +137,62 @@ import { PersonDto } from '../../shared/models/person.dto';
       padding-top: 1.5rem;
       padding-bottom: 1.5rem;
     }
+
+    .person-name {
+      cursor: pointer;
+      color: #007bff;
+      text-decoration: underline;
+    }
+
+    .person-name:hover {
+      color: #0056b3;
+    }
   `]
 })
 export class PersonsListComponent implements OnInit {
   personService = inject(PersonService);
+  router = inject(Router);
   
   searchQuery = '';
   selectedPersonType = '';
   successMessage = '';
 
   ngOnInit() {
-    this.loadPersons();
+    // The service will auto-load persons via effects
   }
 
   loadPersons() {
-    this.personService.loadPersons().subscribe();
+    // Clear search and type filters to load all persons
+    this.personService.setSearchQuery('');
+    this.personService.setPersonType('');
   }
 
   onSearch() {
-    if (this.searchQuery.trim()) {
-      this.personService.searchPersons(this.searchQuery).subscribe();
-    } else {
-      this.loadPersons();
-    }
+    this.personService.setSearchQuery(this.searchQuery);
   }
 
   onPersonTypeChange() {
-    if (this.selectedPersonType) {
-      this.personService.getPersonsByType(this.selectedPersonType).subscribe();
-    } else {
-      this.loadPersons();
+    this.personService.setPersonType(this.selectedPersonType);
+  }
+
+  async deletePerson(person: PersonDto) {
+    if (confirm(`Are you sure you want to delete ${this.getFullName(person)}?`)) {
+      try {
+        await this.personService.deletePerson(person.businessEntityId);
+        this.successMessage = 'Person deleted successfully!';
+        setTimeout(() => this.successMessage = '', 3000);
+      } catch (error) {
+        console.error('Failed to delete person:', error);
+        this.successMessage = 'Error deleting person. Please try again.';
+      }
     }
   }
 
-  deletePerson(person: PersonDto) {
-    if (confirm(`Are you sure you want to delete ${this.personService.getFullName(person)}?`)) {
-      this.personService.deletePerson(person.businessEntityId).subscribe(() => {
-        this.successMessage = 'Person deleted successfully!';
-        setTimeout(() => this.successMessage = '', 3000);
-      });
-    }
+  getFullName(person: PersonDto): string {
+    return `${person.firstName || ''} ${person.lastName || ''}`.trim();
+  }
+
+  viewPersonDetail(businessEntityId: number) {
+    this.router.navigate(['/persons', businessEntityId]);
   }
 } 

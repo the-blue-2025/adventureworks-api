@@ -1,0 +1,7 @@
+{
+  "/api/persons*": "/persons$1",
+  "/api/vendors*": "/vendors$1",
+  "/api/purchase-orders*": "/purchase-orders$1",
+  "/api/ship-methods": "/ship-methods",
+  "/api/purchase-order-details": "/purchase-order-details"
+} 

@@ -20,17 +20,17 @@ import { PurchaseOrderDto } from '../../shared/models/purchase-order.dto';
         </div>
 
         <!-- Loading State -->
-        @if (purchaseOrderService.loading()) {
+        @if (purchaseOrderService.purchaseOrdersLoading()) {
           <div class="loading">Loading purchase order details...</div>
         }
 
         <!-- Error State -->
-        @if (purchaseOrderService.error()) {
-          <div class="error">{{ purchaseOrderService.error() }}</div>
+        @if (purchaseOrderService.purchaseOrdersError()) {
+          <div class="error">{{ purchaseOrderService.purchaseOrdersError() }}</div>
         }
 
         <!-- Purchase Order Details -->
-        @if (purchaseOrderService.selectedItem()) {
+        @if (purchaseOrderService.selectedPurchaseOrder()) {
           @if (order; as order) {
             <div class="order-details">
               <!-- Order Header -->
@@ -47,8 +47,8 @@ import { PurchaseOrderDto } from '../../shared/models/purchase-order.dto';
                         <tr>
                           <th>Status:</th>
                           <td>
-                            <span class="status-badge" [class]="purchaseOrderService.getOrderStatusClass(order)">
-                              {{ purchaseOrderService.getOrderStatusText(order) }}
+                            <span class="status-badge" [class]="getOrderStatusClass(order)">
+                              {{ getOrderStatusText(order) }}
                             </span>
                           </td>
                         </tr>
@@ -203,7 +203,7 @@ import { PurchaseOrderDto } from '../../shared/models/purchase-order.dto';
               }
             </div>
           }
-        } @else if (!purchaseOrderService.loading()) {
+        } @else if (!purchaseOrderService.purchaseOrdersLoading()) {
           <div class="text-center py-4">
             <p>Purchase order not found.</p>
           </div>
@@ -300,10 +300,30 @@ export class PurchaseOrderDetailComponent implements OnInit {
   }
 
   loadPurchaseOrder() {
-    this.purchaseOrderService.getPurchaseOrderById(this.orderId).subscribe();
+    this.purchaseOrderService.selectPurchaseOrder(this.orderId);
   }
 
   get order(): PurchaseOrderDto | null {
-    return this.purchaseOrderService.selectedItem();
+    return this.purchaseOrderService.selectedPurchaseOrder();
+  }
+
+  getOrderStatusClass(order: PurchaseOrderDto): string {
+    switch (order.status) {
+      case 1: return 'status-pending';
+      case 2: return 'status-approved';
+      case 3: return 'status-rejected';
+      case 4: return 'status-complete';
+      default: return 'status-unknown';
+    }
+  }
+
+  getOrderStatusText(order: PurchaseOrderDto): string {
+    switch (order.status) {
+      case 1: return 'Pending';
+      case 2: return 'Approved';
+      case 3: return 'Rejected';
+      case 4: return 'Complete';
+      default: return 'Unknown';
+    }
   }
 } 
