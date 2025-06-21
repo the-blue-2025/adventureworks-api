@@ -58,41 +58,36 @@ module.exports = (req, res, next) => {
     return;
   }
   
-  // Handle list of purchase orders to include vendor information
-  if (req.method === 'GET' && req.url === '/purchase-orders') {
-    console.log('Middleware triggered for purchase orders list request:', req.url);
+  // Handle list of purchase orders to include vendor information - bypass json-server entirely
+  if (req.method === 'GET' && (req.url === '/purchase-orders' || req.url === '/purchase-orders/')) {
+    console.log('Directly handling purchase orders list request:', req.url);
     
-    // Disable caching for purchase order requests to ensure fresh data
+    // Disable caching
     res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.header('Pragma', 'no-cache');
     res.header('Expires', '0');
     
     const db = require('./db.json');
     
-    // Get the original response from json-server
-    const originalJson = res.json;
+    // Get all purchase orders
+    const purchaseOrders = db['purchase-orders'];
     
-    res.json = function(data) {
-      console.log('Processing purchase orders list data:', data ? 'has data' : 'no data');
-      
-      if (Array.isArray(data)) {
-        // Handle list of purchase orders
-        console.log('Processing array of purchase orders');
-        data = data.map(order => {
-          const vendor = db.vendors.find(v => v.businessEntityId === order.vendorId);
-          return {
-            ...order,
-            vendor: vendor ? {
-              businessEntityId: vendor.businessEntityId,
-              name: vendor.name,
-              accountNumber: vendor.accountNumber
-            } : undefined
-          };
-        });
-      }
-      
-      return originalJson.call(this, data);
-    };
+    // Add vendor information to each purchase order
+    const ordersWithVendors = purchaseOrders.map(order => {
+      const vendor = db.vendors.find(v => v.businessEntityId === order.vendorId);
+      return {
+        ...order,
+        vendor: vendor ? {
+          businessEntityId: vendor.businessEntityId,
+          name: vendor.name,
+          accountNumber: vendor.accountNumber
+        } : undefined
+      };
+    });
+    
+    console.log('Sending purchase orders list with vendor information for', ordersWithVendors.length, 'orders');
+    res.json(ordersWithVendors);
+    return;
   }
   
   next();
