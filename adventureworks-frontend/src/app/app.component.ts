@@ -12,9 +12,9 @@ import { CommonModule } from '@angular/common';
         <h1>AdventureWorks Management</h1>
         <nav class="nav-menu">
           <a routerLink="/persons" routerLinkActive="active">Persons</a>
-          <a routerLink="/purchase-orders" routerLinkActive="active">Purchase Orders</a>
-          <a routerLink="/ship-methods" routerLinkActive="active">Ship Methods</a>
           <a routerLink="/vendors" routerLinkActive="active">Vendors</a>
+          <a routerLink="/ship-methods" routerLinkActive="active">Ship Methods</a>
+          <a routerLink="/purchase-orders" routerLinkActive="active">Purchase Orders</a>
         </nav>
       </header>
       
