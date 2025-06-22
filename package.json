@@ -1,11 +1,13 @@
 {
   "name": "adventureworks-api",
   "version": "1.0.0",
-  "description": "AdventureWorks API with Angular Frontend",
-  "main": "index.js",
+  "description": "A RESTful API built to interact with the AdventureWorks database",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "mock-server": "json-server --watch mock-data/db.json --port 3000 --routes mock-data/routes.json --middlewares mock-data/middleware.js"
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -28,7 +30,6 @@
     "nodemon": "^3.1.0",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3",
-    "json-server": "^0.17.4"
+    "typescript": "^5.3.3"
   }
 }
