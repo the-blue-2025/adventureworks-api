@@ -6,10 +6,9 @@ import { IPurchaseOrderRepository } from '../domain/interfaces/IPurchaseOrderRep
 import { IShipMethodRepository } from '../domain/repositories/IShipMethodRepository';
 import { IPersonRepository } from '../domain/repositories/IPersonRepository';
 import { IVendorRepository } from '../domain/repositories/IVendorRepository';
-
 import { PurchaseOrderRepository } from '../infrastructure/repositories/PurchaseOrderRepository';
 import { ShipMethodRepository } from '../infrastructure/repositories/ShipMethodRepository';
-import { PersonRepository } from '../infrastructure/repositories/PersonRepository';
+import { PersonRepository } from '../infrastructure/repositories/Person/PersonRepository';
 import { VendorRepository } from '../infrastructure/repositories/VendorRepository';
 
 // Services
@@ -19,12 +18,14 @@ import { PersonService } from '../application/services/PersonService';
 import { VendorService } from '../application/services/VendorService';
 import { PurchaseOrderDetailService } from '../application/services/PurchaseOrderDetailService';
 
+
 // Controllers
 import { PurchaseOrderController } from '../presentation/controllers/PurchaseOrderController';
 import { ShipMethodController } from '../presentation/controllers/ShipMethodController';
 import { PersonController } from '../presentation/controllers/PersonController';
 import { VendorController } from '../presentation/controllers/VendorController';
 import { PurchaseOrderDetailController } from '../presentation/controllers/PurchaseOrderDetailController';
+import { PersonAggregateController } from '../presentation/controllers/PersonAggregateController';
 
 export function configureContainer(): Container {
   const container = new Container();
@@ -39,6 +40,7 @@ export function configureContainer(): Container {
   container.bind<IVendorRepository>(TYPES.IVendorRepository)
     .to(VendorRepository);
 
+
   // Register services
   container.bind<PurchaseOrderService>(TYPES.PurchaseOrderService)
     .to(PurchaseOrderService);
@@ -51,6 +53,7 @@ export function configureContainer(): Container {
   container.bind<PurchaseOrderDetailService>(TYPES.PurchaseOrderDetailService)
     .to(PurchaseOrderDetailService);
 
+
   // Register controllers
   container.bind<PurchaseOrderController>(PurchaseOrderController)
     .toSelf();
@@ -62,6 +65,7 @@ export function configureContainer(): Container {
     .toSelf();
   container.bind<PurchaseOrderDetailController>(PurchaseOrderDetailController)
     .toSelf();
+
 
   return container;
 } 

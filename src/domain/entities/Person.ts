@@ -1,5 +1,8 @@
 import { Entity } from '../common/Entity';
 import { AggregateRoot } from '../common/AggregateRoot';
+import { Address } from './Address';
+import { EmailAddress } from './EmailAddress';
+import { PersonPhone } from './PersonPhone';
 
 export interface PersonProps {
   businessEntityId: number;
@@ -14,7 +17,22 @@ export interface PersonProps {
   modifiedDate: Date;
 }
 
+/**
+ * Object defining all child entity types for the Person aggregate
+ * Uses actual entity class names for type safety and maintainability
+ */
+export const PersonChildEntityType = {
+  ADDRESS: Address.name,
+  EMAIL_ADDRESS: EmailAddress.name,
+  PERSON_PHONE: PersonPhone.name
+} as const;
+
 export class Person extends Entity<PersonProps> implements AggregateRoot<PersonProps> {
+  /**
+   * Child entity types for the Person aggregate
+   */
+  readonly ChildEntityType = PersonChildEntityType;
+
   get businessEntityId(): number {
     return this.props.businessEntityId;
   }
@@ -54,6 +72,8 @@ export class Person extends Entity<PersonProps> implements AggregateRoot<PersonP
   get modifiedDate(): Date {
     return this.props.modifiedDate;
   }
+
+
 
   private constructor(props: PersonProps) {
     super(props);
